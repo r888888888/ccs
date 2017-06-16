@@ -1,0 +1,13 @@
+{% extends "layout.html" %}
+{% block body %}
+
+<p>This is the web frontend for the <a href="https://github.com/r888888888/ccs">Character Classification Service</a>.</p>
+
+<form method="post" action="/query" enctype="multipart/form-data">
+  <div class="form-group">
+    <input name="file" type="file">
+  </div>
+
+  <button type="submit" class="btn btn-primary">Upload</button>
+</form>
+{% endblock %}
