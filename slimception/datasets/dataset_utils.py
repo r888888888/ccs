@@ -20,6 +20,7 @@ from __future__ import print_function
 import os
 import sys
 import tarfile
+import numpy as np
 
 from six.moves import urllib
 import tensorflow as tf
@@ -36,9 +37,23 @@ def int64_feature(values):
   Returns:
     a TF-Feature.
   """
-  if not isinstance(values, (tuple, list)):
+  if not isinstance(values, (tuple, list, np.ndarray)):
     values = [values]
   return tf.train.Feature(int64_list=tf.train.Int64List(value=values))
+
+def float_feature(values):
+  """Returns a TF-Feature of floats.
+
+  Args:
+    values: A scalar or list of values.
+
+  Returns:
+    a TF-Feature.
+  """
+  if not isinstance(values, (tuple, list, np.ndarray)):
+    values = [values]
+  return tf.train.Feature(float_list=tf.train.FloatList(value=values))
+
 
 
 def bytes_feature(values):
@@ -53,11 +68,11 @@ def bytes_feature(values):
   return tf.train.Feature(bytes_list=tf.train.BytesList(value=[values]))
 
 
-def image_to_tfexample(image_data, image_format, height, width, class_id):
+def image_to_tfexample(image_data, image_format, height, width, class_ids):
   return tf.train.Example(features=tf.train.Features(feature={
       'image/encoded': bytes_feature(image_data),
       'image/format': bytes_feature(image_format),
-      'image/class/label': int64_feature(class_id),
+      'image/class/labels': float_feature(class_ids),
       'image/height': int64_feature(height),
       'image/width': int64_feature(width),
   }))
@@ -124,7 +139,7 @@ def read_label_file(dataset_dir, filename=LABELS_FILENAME):
     A map from a label (integer) to class name.
   """
   labels_filename = os.path.join(dataset_dir, filename)
-  with tf.gfile.Open(labels_filename, 'r') as f:
+  with open(labels_filename, 'r') as f:
     lines = f.read()
   lines = lines.split('\n')
   lines = filter(None, lines)

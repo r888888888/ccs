@@ -21,14 +21,14 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
+import os
 import sys
+sys.path.append(os.path.normpath(os.path.join(__file__, "..", "..")))
 
-sys.path.append("../")
-
-from datasets import dataset_factory
-from nets import nets_factory
-from preprocessing import preprocessing_factory
-from deployment import model_deploy
+from slimception.datasets import dataset_factory
+from slimception.nets import nets_factory
+from slimception.preprocessing import preprocessing_factory
+from slimception.deployment import model_deploy
 
 slim = tf.contrib.slim
 
@@ -446,8 +446,6 @@ def main(_):
           batch_size=FLAGS.batch_size,
           num_threads=FLAGS.num_preprocessing_threads,
           capacity=5 * FLAGS.batch_size)
-      labels = slim.one_hot_encoding(
-          labels, dataset.num_classes - FLAGS.labels_offset)
       batch_queue = slim.prefetch_queue.prefetch_queue(
           [images, labels], capacity=2 * deploy_config.num_clones)
 
@@ -463,11 +461,11 @@ def main(_):
       # Specify the loss function #
       #############################
       if 'AuxLogits' in end_points:
-        tf.losses.softmax_cross_entropy(
-            logits=end_points['AuxLogits'], onehot_labels=labels,
+        tf.losses.sigmoid_cross_entropy(
+            labels, end_points['AuxLogits'], 
             label_smoothing=FLAGS.label_smoothing, weights=0.4, scope='aux_loss')
-      tf.losses.softmax_cross_entropy(
-          logits=logits, onehot_labels=labels,
+      tf.losses.sigmoid_cross_entropy(
+          labels, logits,
           label_smoothing=FLAGS.label_smoothing, weights=1.0)
       return end_points
 

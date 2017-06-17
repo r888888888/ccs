@@ -2,7 +2,7 @@
 
 set -e
 
-DATA_HOME_DIR=~/tf-data
+DATA_HOME_DIR=${DATA_HOME_DIR:-~/tf-data-multi}
 PRETRAINED_CHECKPOINT_DIR=$DATA_HOME_DIR/checkpoints
 MODEL_DIR=$DATA_HOME_DIR/models
 DATASET_DIR=$DATA_HOME_DIR/dataset
@@ -52,20 +52,20 @@ slimception/download_and_convert_data.py \
 
 # Fine-tune only the new layers for 1000 steps.
 slimception/train_image_classifier.py \
-  --MODEL_DIR=${MODEL_DIR} \
+  --train_dir=${MODEL_DIR} \
   --dataset_name=characters \
   --dataset_split_name=train \
   --dataset_dir=${DATASET_DIR} \
   --model_name=inception_v4 \
   --checkpoint_path=${PRETRAINED_CHECKPOINT_DIR}/inception_v4.ckpt \
   --checkpoint_exclude_scopes=InceptionV4/Logits,InceptionV4/AuxLogits \
-  --max_number_of_steps=15000 \
+  --max_number_of_steps=500 \
   --batch_size=32 \
   --learning_rate=0.02 \
   --learning_rate_decay_type=fixed \
   --save_interval_secs=60 \
   --save_summaries_secs=60 \
-  --log_every_n_steps=250 \
+  --log_every_n_steps=100 \
   --optimizer=adam \
   --weight_decay=0.00004
 
@@ -80,19 +80,19 @@ slimception/eval_image_classifier.py \
 
 # Fine-tune all the new layers for 500 steps.
 slimception/train_image_classifier.py \
-  --MODEL_DIR=${MODEL_DIR}/all \
+  --train_dir=${MODEL_DIR}/all \
   --dataset_name=characters \
   --dataset_split_name=train \
   --dataset_dir=${DATASET_DIR} \
   --model_name=inception_v4 \
   --checkpoint_path=${MODEL_DIR} \
-  --max_number_of_steps=4000 \
+  --max_number_of_steps=500 \
   --batch_size=32 \
   --learning_rate=0.0001 \
   --learning_rate_decay_type=fixed \
   --save_interval_secs=60 \
   --save_summaries_secs=60 \
-  --log_every_n_steps=10 \
+  --log_every_n_steps=100 \
   --optimizer=adam \
   --weight_decay=0.00004
 

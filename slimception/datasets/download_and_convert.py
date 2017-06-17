@@ -15,9 +15,10 @@ from pathlib import Path
 _VALIDATION_PERCENTAGE = 0.9
 _RANDOM_SEED = 0
 _NUM_SHARDS = 5
-_CSV_SOURCE_FILE = "posts_chars.csv"
+_CSV_SOURCE_FILE = "posts.csv"
 _NUM_CLASSES_FILE = "num_classes.txt"
-_MIN_CHAR_DF = 0.001
+_NUM_IMAGES_FILE = "num_images.txt"
+_MIN_CHAR_DF = 0.01
 
 class ImageReader(object):
   """Helper class that provides TensorFlow image coding utilities."""
@@ -74,11 +75,14 @@ def _convert_dataset(split_name, hashes, class_names_to_ids, dataset_dir):
             image_data = tf.gfile.FastGFile(_image_path(dataset_dir, hashes[i]), 'rb').read()
             height, width = image_reader.read_image_dims(sess, image_data)
 
-            class_name = _read_label(dataset_dir, hashes[i])
-            class_id = class_names_to_ids[class_name]
+            num_classes = len(class_names_to_ids)
+            class_names = _read_labels(dataset_dir, hashes[i])
+            class_ids = np.zeros(num_classes, dtype=np.float32)
+            for x in class_names:
+              class_ids[class_names_to_ids[x]] = 1.0
 
             example = dataset_utils.image_to_tfexample(
-                image_data, b'jpg', height, width, class_id)
+                image_data, b'jpg', height, width, class_ids)
             tfrecord_writer.write(example.SerializeToString())
 
   sys.stdout.write('\n')
@@ -107,38 +111,37 @@ def _delete_old_images(dataset_dir, hashes):
 def _download_images(dataset_dir):
   data = pd.read_csv(os.path.join(dataset_dir, _CSV_SOURCE_FILE))
   cv = CountVectorizer(min_df=_MIN_CHAR_DF, tokenizer=_tag_tokenizer)
-  cv.fit(data["character"])
-  chars = set(cv.vocabulary_.keys())
+  cv.fit(data["tags"])
+  tags = set(cv.vocabulary_.keys())
   hashes = set()
 
   with open(os.path.join(dataset_dir, _NUM_CLASSES_FILE), "w") as f:
-    f.write(str(len(chars)))
+    f.write(str(len(tags)))
 
   _delete_all_labels(dataset_dir)
 
   for index, row in data.iterrows():
     md5 = row["md5"]
     url = row["url"]
-    char = row["character"]
-    if re.search(r".jpg", url) and char in chars:
-      local_path = _image_path(dataset_dir, md5)
-      label_path = _label_path(dataset_dir, md5)
-      hashes.add(md5)
-      if not os.path.isfile(local_path):
-        print("downloading", url)
-        urllib.request.urlretrieve(url, local_path)
-      with open(label_path, "w") as f:
-        f.write(char)
+    ts = set(row["tags"].split(" "))
+    local_path = _image_path(dataset_dir, md5)
+    label_path = _label_path(dataset_dir, md5)
+    hashes.add(md5)
+    if not os.path.isfile(local_path):
+      print("downloading", url)
+      urllib.request.urlretrieve(url, local_path)
+    with open(label_path, "w") as f:
+      f.write("\n".join(ts.intersection(tags)))
 
   _delete_old_images(dataset_dir, hashes)
-  return (list(hashes), chars)
+  return (list(hashes), tags)
 
 def _label_path(dataset_dir, hash):
   return os.path.normpath(os.path.join(dataset_dir, "..", "image_labels/{}.txt".format(hash)))
 
-def _read_label(dataset_dir, hash):
+def _read_labels(dataset_dir, hash):
   with open(_label_path(dataset_dir, hash), "r") as f:
-    return f.read()
+    return f.read().split()
 
 def _image_path(dataset_dir, hash):
   return os.path.normpath(os.path.join(dataset_dir, "..", "images/{}.jpg".format(hash)))
@@ -153,6 +156,9 @@ def run(dataset_dir):
 
   hashes, class_names = _download_images(dataset_dir)
   class_names_to_ids = dict(zip(class_names, range(len(class_names))))
+
+  with open(os.path.join(dataset_dir, _NUM_IMAGES_FILE), "w") as f:
+    f.write(str(len(hashes)))
 
   # Divide into train and test:
   random.seed(_RANDOM_SEED)

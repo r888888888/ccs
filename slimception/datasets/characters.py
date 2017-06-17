@@ -25,7 +25,7 @@ from slimception.datasets import dataset_utils
 slim = tf.contrib.slim
 
 _FILE_PATTERN = 'chars_%s_*.tfrecord'
-SPLITS_TO_SIZES = {'train': 40000, 'validation': 10000}
+SPLITS_TO_SIZES = {'train': 0.9, 'validation': 0.1}
 _ITEMS_TO_DESCRIPTIONS = {
   'image': 'A color image of varying size.',
   'label': 'A single integer',
@@ -59,16 +59,23 @@ def get_split(split_name, dataset_dir, file_pattern=None, reader=None):
   if reader is None:
     reader = tf.TFRecordReader
 
+  with open(os.path.join(dataset_dir, "num_classes.txt"), "r") as f:
+    num_classes = int(f.read())
+
+  with open(os.path.join(dataset_dir, "num_images.txt"), "r") as f:
+    num_samples = int(f.read())
+    num_samples = int(SPLITS_TO_SIZES[split_name] * num_samples)
+
   keys_to_features = {
     'image/encoded': tf.FixedLenFeature((), tf.string, default_value=''),
     'image/format': tf.FixedLenFeature((), tf.string, default_value='png'),
-    'image/class/label': tf.FixedLenFeature(
-      [], tf.int64, default_value=tf.zeros([], dtype=tf.int64)),
+    'image/class/labels': tf.FixedLenFeature(
+      (num_classes,), tf.float32),
   }
 
   items_to_handlers = {
     'image': slim.tfexample_decoder.Image(),
-    'label': slim.tfexample_decoder.Tensor('image/class/label'),
+    'label': slim.tfexample_decoder.Tensor('image/class/labels'),
   }
 
   decoder = slim.tfexample_decoder.TFExampleDecoder(
@@ -78,14 +85,11 @@ def get_split(split_name, dataset_dir, file_pattern=None, reader=None):
   if dataset_utils.has_labels(dataset_dir):
     labels_to_names = dataset_utils.read_label_file(dataset_dir)
 
-  with open(os.path.join(dataset_dir, "num_classes.txt"), "r") as f:
-    num_classes = int(f.read())
-
   return slim.dataset.Dataset(
     data_sources=file_pattern,
     reader=reader,
     decoder=decoder,
-    num_samples=SPLITS_TO_SIZES[split_name],
+    num_samples=num_samples,
     items_to_descriptions=_ITEMS_TO_DESCRIPTIONS,
     num_classes=num_classes,
     labels_to_names=labels_to_names)

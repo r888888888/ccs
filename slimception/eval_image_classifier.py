@@ -22,10 +22,13 @@ from __future__ import print_function
 
 import math
 import tensorflow as tf
+import os
+import sys
+sys.path.append(os.path.normpath(os.path.join(__file__, "..", "..")))
 
-from datasets import characters
-from nets import nets_factory
-from preprocessing import preprocessing_factory
+from slimception.datasets import characters
+from slimception.nets import nets_factory
+from slimception.preprocessing import preprocessing_factory
 
 slim = tf.contrib.slim
 
@@ -149,14 +152,14 @@ def main(_):
     else:
       variables_to_restore = slim.get_variables_to_restore()
 
-    predictions = tf.argmax(logits, 1)
+    predictions = tf.round(logits)
     labels = tf.squeeze(labels)
 
     # Define the metrics:
     names_to_values, names_to_updates = slim.metrics.aggregate_metric_map({
-      'Accuracy': slim.metrics.accuracy(logits, labels),
-      'Precision_3': slim.metrics.streaming_sparse_average_precision_at_k(predictions, labels, 3),
-      'Recall_3': slim.metrics.streaming_sparse_recall_at_k(logits, labels, 3)
+      'Accuracy': slim.metrics.streaming_accuracy(predictions, labels),
+      'Precision_5': slim.metrics.streaming_sparse_precision_at_top_k(predictions, labels, 5),
+      'Recall_5': slim.metrics.streaming_sparse_recall_at_k(predictions, labels, 5)
     })
 
     # Print the summaries to screen.
