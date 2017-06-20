@@ -59,7 +59,7 @@ slimception/train_image_classifier.py \
   --model_name=inception_v4 \
   --checkpoint_path=${PRETRAINED_CHECKPOINT_DIR}/inception_v4.ckpt \
   --checkpoint_exclude_scopes=InceptionV4/Logits,InceptionV4/AuxLogits \
-  --max_number_of_steps=500 \
+  --max_number_of_steps=15000 \
   --batch_size=32 \
   --learning_rate=0.02 \
   --learning_rate_decay_type=fixed \
@@ -86,7 +86,7 @@ slimception/train_image_classifier.py \
   --dataset_dir=${DATASET_DIR} \
   --model_name=inception_v4 \
   --checkpoint_path=${MODEL_DIR} \
-  --max_number_of_steps=500 \
+  --max_number_of_steps=2000 \
   --batch_size=32 \
   --learning_rate=0.0001 \
   --learning_rate_decay_type=fixed \

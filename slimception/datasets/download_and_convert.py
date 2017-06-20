@@ -18,7 +18,8 @@ _NUM_SHARDS = 5
 _CSV_SOURCE_FILE = "posts.csv"
 _NUM_CLASSES_FILE = "num_classes.txt"
 _NUM_IMAGES_FILE = "num_images.txt"
-_MIN_CHAR_DF = 0.01
+_MIN_CHAR_DF = 0.05
+_IGNORE_TAGS = set(["absurdres", "character_name", "character_request", "commentary", "commentary_request", "copyright_name", "official_art", "translation_request", "translated"])
 
 class ImageReader(object):
   """Helper class that provides TensorFlow image coding utilities."""
@@ -124,6 +125,7 @@ def _download_images(dataset_dir):
     md5 = row["md5"]
     url = row["url"]
     ts = set(row["tags"].split(" "))
+    ts = ts - _IGNORE_TAGS
     local_path = _image_path(dataset_dir, md5)
     label_path = _label_path(dataset_dir, md5)
     hashes.add(md5)

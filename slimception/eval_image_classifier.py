@@ -152,8 +152,8 @@ def main(_):
     else:
       variables_to_restore = slim.get_variables_to_restore()
 
-    predictions = tf.round(logits)
-    labels = tf.squeeze(labels)
+    predictions = tf.cast(tf.round(logits), tf.int64)
+    labels = tf.cast(tf.squeeze(labels), tf.int64)
 
     # Define the metrics:
     names_to_values, names_to_updates = slim.metrics.aggregate_metric_map({
