@@ -26,15 +26,47 @@ from datasets import download_and_convert
 FLAGS = tf.app.flags.FLAGS
 
 tf.app.flags.DEFINE_string(
-    'dataset_dir',
-    None,
-    'The directory where the output TFRecords and temporary files are saved.')
+  'dataset_dir',
+  None,
+  'The directory where the output TFRecords and temporary files are saved.'
+)
+
+tf.app.flags.DEFINE_string(
+  'source_csv',
+  'posts.csv',
+  'Source CSV file with all the data'
+)
+
+tf.app.flags.DEFINE_string(
+  'num_classes_file',
+  None,
+  "Text file indicating how many classes the data set has"
+)
+
+tf.app.flags.DEFINE_string(
+  'num_images_file',
+  None,
+  "Text file indicating how many images the data set has"
+)
+
+tf.app.flags.DEFINE_string(
+  'daataset_name',
+  None,
+  "Name of the data set"
+)
 
 def main(_):
   if not FLAGS.dataset_dir:
     raise ValueError('You must supply the dataset directory with --dataset_dir')
 
-  download_and_convert.run(FLAGS.dataset_dir)
+  processor = download_and_convert.DownloaderAndConverter(
+    num_classes_file=FLAGS.num_classes_file,
+    num_images_file=FLAGS.num_images_file,
+    dataset_name=FLAGS.dataset_name,
+    dataset_dir='~/tf-data-multi',
+    source_csv=FLAGS.source_csv
+  )
+  processor.run()
 
 if __name__ == '__main__':
   tf.app.run()

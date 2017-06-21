@@ -24,15 +24,15 @@ from slimception.datasets import dataset_utils
 
 slim = tf.contrib.slim
 
-_FILE_PATTERN = 'chars_%s_*.tfrecord'
-_SPLITS_TO_SIZES = {'train': 0.9, 'validation': 0.1}
+_FILE_PATTERN = 'tags_%s_*.tfrecord'
+SPLITS_TO_SIZES = {'train': 0.9, 'validation': 0.1}
 _ITEMS_TO_DESCRIPTIONS = {
   'image': 'A color image of varying size.',
   'label': 'A single integer',
 }
 
 def get_split(split_name, dataset_dir, file_pattern=None, reader=None):
-  """Gets a dataset tuple with instructions for reading characters.
+  """Gets a dataset tuple with instructions for reading tags.
 
   Args:
     split_name: A train/validation split name.
@@ -48,7 +48,7 @@ def get_split(split_name, dataset_dir, file_pattern=None, reader=None):
   Raises:
     ValueError: if `split_name` is not a valid train/validation split.
   """
-  if split_name not in _SPLITS_TO_SIZES:
+  if split_name not in SPLITS_TO_SIZES:
     raise ValueError('split name %s was not recognized.' % split_name)
 
   if not file_pattern:
@@ -59,22 +59,23 @@ def get_split(split_name, dataset_dir, file_pattern=None, reader=None):
   if reader is None:
     reader = tf.TFRecordReader
 
-  with open(os.path.join(dataset_dir, "num_chars.txt"), "r") as f:
+  with open(os.path.join(dataset_dir, "num_tags.txt"), "r") as f:
     num_classes = int(f.read())
 
-  with open(os.path.join(dataset_dir, "num_char_images.txt"), "r") as f:
+  with open(os.path.join(dataset_dir, "num_tag_images.txt"), "r") as f:
     num_samples = int(f.read())
-    num_samples = int(_SPLITS_TO_SIZES[split_name] * num_samples)
+    num_samples = int(SPLITS_TO_SIZES[split_name] * num_samples)
 
   keys_to_features = {
     'image/encoded': tf.FixedLenFeature((), tf.string, default_value=''),
     'image/format': tf.FixedLenFeature((), tf.string, default_value='png'),
-    'image/class/label': tf.FixedLenFeature((), tf.int64, default_value=0),
+    'image/class/labels': tf.FixedLenFeature(
+      (num_classes,), tf.int64),
   }
 
   items_to_handlers = {
     'image': slim.tfexample_decoder.Image(),
-    'label': slim.tfexample_decoder.Tensor('image/class/label'),
+    'label': slim.tfexample_decoder.Tensor('image/class/labels'),
   }
 
   decoder = slim.tfexample_decoder.TFExampleDecoder(

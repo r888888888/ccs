@@ -12,15 +12,8 @@ from datasets import dataset_utils
 from itertools import islice
 from pathlib import Path
 
-_VALIDATION_PERCENTAGE = 0.9
-_RANDOM_SEED = 0
-_NUM_SHARDS = 5
-_CSV_SOURCE_FILE = "posts.csv"
-_NUM_CLASSES_FILE = "num_classes.txt"
-_NUM_IMAGES_FILE = "num_images.txt"
-_MIN_TERM_DF = 0.02
-_MAX_TERM_DF = 0.3
-_IGNORE_TAGS = set(["absurdres", "highres", "character_name", "character_request", "commentary", "commentary_request", "copyright_name", "official_art", "translation_request", "translated"])
+def _tag_tokenizer(x):
+  return x.split()
 
 class ImageReader(object):
   """Helper class that provides TensorFlow image coding utilities."""
@@ -43,141 +36,185 @@ class ImageReader(object):
     assert image.shape[2] == 3
     return image
 
-def _get_dataset_filename(dataset_dir, split_name, shard_id):
-  output_filename = 'chars_%s_%05d-of-%05d.tfrecord' % (
-      split_name, shard_id, _NUM_SHARDS)
-  return os.path.join(dataset_dir, output_filename)
+class DownloaderAndConverter():
+  def __init__(self, **kwargs):
+    self._num_classes_file = kwargs.get('num_classes_file', 'num_classes.txt')
+    self._num_images_file = kwargs.get('num_images_file', 'num_images.txt')
+    self._num_shards = kwargs.get('num_shards', 5)
+    self._dataset_name = kwargs.get('dataset_name')
+    self._dataset_dir = kwargs.get('dataset_dir', '~/tf-data')
+    self._source_csv = kwargs.get('source_csv', 'posts.csv')
+    self._random_seed = kwargs.get('random_seed', 42)
+    self._min_term_df = kwargs.get('min_term_df', 0.02)
+    self._max_term_df = kwargs.get('max_term_df', 0.3)
+    self._ignore_tags = kwargs.get('ignore_tags', set())
+    self._validation_percentage = kwargs.get('validation_percentage', 0.9)
+    self._multilabel = kwargs.get('multilabel', False)
 
-def _tag_tokenizer(x):
-  return x.split()
+  def _get_dataset_filename(self, split_name, shard_id):
+    output_filename = '%s_%s_%05d-of-%05d.tfrecord' % (
+      self._dataset_name,
+      split_name, 
+      shard_id, 
+      self._num_shards
+    )
+    return os.path.join(self._dataset_dir, output_filename)
 
-def _convert_dataset(split_name, hashes, class_names_to_ids, dataset_dir):
-  assert split_name in ['train', 'validation']
+  def _convert_dataset(self, split_name, hashes, class_names_to_ids):
+    assert split_name in ['train', 'validation']
 
-  num_per_shard = int(math.ceil(len(hashes) / float(_NUM_SHARDS)))
+    num_per_shard = int(math.ceil(len(hashes) / float(self._num_shards)))
 
-  with tf.Graph().as_default():
-    image_reader = ImageReader()
+    with tf.Graph().as_default():
+      image_reader = ImageReader()
 
-    with tf.Session('') as sess:
+      with tf.Session('') as sess:
 
-      for shard_id in range(_NUM_SHARDS):
-        output_filename = _get_dataset_filename(
-            dataset_dir, split_name, shard_id)
+        for shard_id in range(self._num_shards):
+          output_filename = _get_dataset_filename(
+            self._dataset_dir, 
+            split_name, 
+            shard_id
+          )
 
-        with tf.python_io.TFRecordWriter(output_filename) as tfrecord_writer:
-          start_ndx = shard_id * num_per_shard
-          end_ndx = min((shard_id+1) * num_per_shard, len(hashes))
-          for i in range(start_ndx, end_ndx):
-            sys.stdout.write('\r>> Converting image %d/%d shard %d' % (
-                i+1, len(hashes), shard_id))
-            sys.stdout.flush()
+          with tf.python_io.TFRecordWriter(output_filename) as tfrecord_writer:
+            start_ndx = shard_id * num_per_shard
+            end_ndx = min((shard_id+1) * num_per_shard, len(hashes))
+            for i in range(start_ndx, end_ndx):
+              sys.stdout.write(
+                '\r>> Converting image %d/%d shard %d' % (
+                  i+1, 
+                  len(hashes), 
+                  shard_id
+                )
+              )
+              sys.stdout.flush()
 
-            # Read the filename:
-            image_data = tf.gfile.FastGFile(_image_path(dataset_dir, hashes[i]), 'rb').read()
-            height, width = image_reader.read_image_dims(sess, image_data)
+              # Read the filename:
+              image_data = tf.gfile.FastGFile(self._image_path(hashes[i]), 'rb').read()
+              height, width = image_reader.read_image_dims(sess, image_data)
 
-            num_classes = len(class_names_to_ids)
-            class_names = _read_labels(dataset_dir, hashes[i])
-            class_ids = np.zeros(num_classes, dtype=np.float32)
-            for x in class_names:
-              class_ids[class_names_to_ids[x]] = 1.0
+              num_classes = len(class_names_to_ids)
+              if self._multilabel:
+                class_names = self._read_labels(hashes[i])
+                class_ids = np.zeros(num_classes, dtype=np.int64)
+                for x in class_names:
+                  class_ids[class_names_to_ids[x]] = 1.0
+              else:
+                class_name = self._read_label(hashes[i])
+                class_ids = class_names_to_ids[class_name]
 
-            example = dataset_utils.image_to_tfexample(
-                image_data, b'jpg', height, width, class_ids)
-            tfrecord_writer.write(example.SerializeToString())
+              example = dataset_utils.image_to_tfexample(
+                image_data, 
+                b'jpg', 
+                height, 
+                width, 
+                class_ids
+              )
+              tfrecord_writer.write(example.SerializeToString())
 
-  sys.stdout.write('\n')
-  sys.stdout.flush()
+    sys.stdout.write('\n')
+    sys.stdout.flush()
 
-def _dataset_exists(dataset_dir):
-  for split_name in ['train', 'validation']:
-    for shard_id in range(_NUM_SHARDS):
-      output_filename = _get_dataset_filename(
-          dataset_dir, split_name, shard_id)
-      if not tf.gfile.Exists(output_filename):
-        return False
-  return True
+  def _dataset_exists(self):
+    for split_name in ['train', 'validation']:
+      for shard_id in range(self._num_shards):
+        output_filename = self._get_dataset_filename(
+          dataset_dir, 
+          split_name, 
+          shard_id
+        )
+        if not tf.gfile.Exists(output_filename):
+          return False
+    return True
 
-def _delete_all_labels(dataset_dir):
-  for file in Path(os.path.normpath(os.path.join(dataset_dir, "..", "image_labels"))).iterdir():
-    file.unlink()
-
-def _delete_old_images(dataset_dir, hashes):
-  for file in Path(os.path.normpath(os.path.join(dataset_dir, "..", "images"))).iterdir():
-    h = re.search(r"[a-f0-9]{32}", str(file)).group(0)
-    if h not in hashes:
-      print("deleting", str(file))
+  def _delete_all_labels(self):
+    for file in Path(os.path.normpath(os.path.join(self._dataset_dir, "..", "image_labels"))).iterdir():
       file.unlink()
 
-def _download_images(dataset_dir):
-  data = pd.read_csv(os.path.join(dataset_dir, _CSV_SOURCE_FILE))
-  cv = CountVectorizer(min_df=_MIN_TERM_DF, max_df=_MAX_TERM_DF, tokenizer=_tag_tokenizer)
-  cv.fit(data["tags"])
-  tags = set(cv.vocabulary_.keys())
-  hashes = set()
+  def _delete_old_images(self, hashes):
+    for file in Path(os.path.normpath(os.path.join(self._dataset_dir, "..", "images"))).iterdir():
+      h = re.search(r"[a-f0-9]{32}", str(file)).group(0)
+      if h not in hashes:
+        print("deleting", str(file))
+        file.unlink()
 
-  with open(os.path.join(dataset_dir, _NUM_CLASSES_FILE), "w") as f:
-    f.write(str(len(tags)))
+  def _download_images(self):
+    data = pd.read_csv(os.path.join(self._dataset_dir, self._source_csv))
+    cv = CountVectorizer(min_df=self._min_term_df, max_df=self.max_term_df, tokenizer=_tag_tokenizer)
+    cv.fit(data["tags"])
+    tags = set(cv.vocabulary_.keys())
+    hashes = set()
 
-  _delete_all_labels(dataset_dir)
+    with open(os.path.join(self._dataset_dir, self._num_classes_file), "w") as f:
+      f.write(str(len(tags)))
 
-  for index, row in data.iterrows():
-    md5 = row["md5"]
-    url = row["url"]
-    ts = set(row["tags"].split(" "))
-    ts = ts - _IGNORE_TAGS
-    local_path = _image_path(dataset_dir, md5)
-    label_path = _label_path(dataset_dir, md5)
-    hashes.add(md5)
-    if not os.path.isfile(local_path):
-      print("downloading", url)
-      urllib.request.urlretrieve(url, local_path)
-    with open(label_path, "w") as f:
-      f.write("\n".join(ts.intersection(tags)))
+    self._delete_all_labels()
 
-  _delete_old_images(dataset_dir, hashes)
-  return (list(hashes), tags)
+    for index, row in data.iterrows():
+      md5 = row["md5"]
+      url = row["url"]
+      ts = set(row["tags"].split(" "))
+      ts = ts - self._ignore_tags
+      local_path = self._image_path(md5)
+      label_path = self._label_path(md5)
+      hashes.add(md5)
+      if not os.path.isfile(local_path):
+        print("downloading", url)
+        urllib.request.urlretrieve(url, local_path)
+      with open(label_path, "w") as f:
+        f.write("\n".join(ts.intersection(tags)))
 
-def _label_path(dataset_dir, hash):
-  return os.path.normpath(os.path.join(dataset_dir, "..", "image_labels/{}.txt".format(hash)))
+    self._delete_old_images(hashes)
+    return (list(hashes), tags)
 
-def _read_labels(dataset_dir, hash):
-  with open(_label_path(dataset_dir, hash), "r") as f:
-    return f.read().split()
+  def _label_path(self, hash):
+    return os.path.normpath(os.path.join(self._dataset_dir, "..", "image_labels/{}.txt".format(hash)))
 
-def _image_path(dataset_dir, hash):
-  return os.path.normpath(os.path.join(dataset_dir, "..", "images/{}.jpg".format(hash)))
+  def _read_labels(self, hash):
+    with open(_label_path(self._dataset_dir, hash), "r") as f:
+      return f.read().split()
 
-def run(dataset_dir):
-  if not tf.gfile.Exists(dataset_dir):
-    tf.gfile.MakeDirs(dataset_dir)
+  def _image_path(self, hash):
+    return os.path.normpath(os.path.join(self._dataset_dir, "..", "images/{}.jpg".format(hash)))
 
-  if _dataset_exists(dataset_dir):
-    print('Dataset files already exist. Exiting without re-creating them.')
-    return
+  def run(self):
+    if not tf.gfile.Exists(self._dataset_dir):
+      tf.gfile.MakeDirs(self._dataset_dir)
 
-  hashes, class_names = _download_images(dataset_dir)
-  class_names_to_ids = dict(zip(class_names, range(len(class_names))))
+    if self._dataset_exists():
+      print('Dataset files already exist. Exiting without re-creating them.')
+      return
 
-  with open(os.path.join(dataset_dir, _NUM_IMAGES_FILE), "w") as f:
-    f.write(str(len(hashes)))
+    hashes, class_names = self._download_images(self._source_csv)
+    class_names_to_ids = dict(zip(class_names, range(len(class_names))))
+
+    with open(os.path.join(self._dataset_dir, self._num_images_file), "w") as f:
+      f.write(str(len(hashes)))
 
   # Divide into train and test:
-  random.seed(_RANDOM_SEED)
+  random.seed(self._random_seed)
   random.shuffle(hashes)
-  partition = int(len(hashes) * _VALIDATION_PERCENTAGE)
+  partition = int(len(hashes) * self._validation_percentage)
   training_hashes = hashes[partition:]
   validation_hashes = hashes[:partition]
 
   # First, convert the training and validation sets.
-  _convert_dataset('train', training_hashes, class_names_to_ids,
-                   dataset_dir)
-  _convert_dataset('validation', validation_hashes, class_names_to_ids,
-                   dataset_dir)
+  _convert_dataset(
+    'train', 
+    training_hashes, 
+    class_names_to_ids,
+    self._dataset_dir
+  )
+  _convert_dataset(
+    'validation', 
+    validation_hashes, 
+    class_names_to_ids,
+    self._dataset_dir
+  )
 
   # Finally, write the labels file:
   labels_to_class_names = dict(zip(range(len(class_names)), class_names))
-  dataset_utils.write_label_file(labels_to_class_names, dataset_dir)
+  dataset_utils.write_label_file(labels_to_class_names, self._dataset_dir)
 
-  print('\nFinished converting the chars dataset!')
+  print('\nFinished converting the dataset!')

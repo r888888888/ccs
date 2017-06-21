@@ -48,7 +48,11 @@ fi
 
 # Download the dataset
 slimception/download_and_convert_data.py \
-  --dataset_dir=${DATASET_DIR}
+  --dataset_dir=${DATASET_DIR} \
+  --num_classes_file=num_char_classes.txt \
+  --num_images_file=num_cagar_images.txt \
+  --dataset_name=characters \
+  --source_csv=posts.csv
 
 # Fine-tune only the new layers for 1000 steps.
 slimception/train_image_classifier.py \
@@ -67,7 +71,8 @@ slimception/train_image_classifier.py \
   --save_summaries_secs=60 \
   --log_every_n_steps=100 \
   --optimizer=adam \
-  --weight_decay=0.00004
+  --weight_decay=0.00004 \
+  --multilabel=false
 
 # Run evaluation.
 slimception/eval_image_classifier.py \
@@ -76,7 +81,8 @@ slimception/eval_image_classifier.py \
   --dataset_name=characters \
   --dataset_split_name=validation \
   --dataset_dir=${DATASET_DIR} \
-  --model_name=inception_v4
+  --model_name=inception_v4 \
+  --multilabel=false
 
 # Fine-tune all the new layers for 500 steps.
 slimception/train_image_classifier.py \
@@ -94,7 +100,8 @@ slimception/train_image_classifier.py \
   --save_summaries_secs=60 \
   --log_every_n_steps=100 \
   --optimizer=adam \
-  --weight_decay=0.00004
+  --weight_decay=0.00004 \
+  --multilabel=false
 
 # Run evaluation.
 slimception/eval_image_classifier.py \
@@ -103,4 +110,5 @@ slimception/eval_image_classifier.py \
   --dataset_name=characters \
   --dataset_split_name=validation \
   --dataset_dir=${DATASET_DIR} \
-  --model_name=inception_v4
+  --model_name=inception_v4 \
+  --multilabel=false

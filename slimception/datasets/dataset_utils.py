@@ -41,21 +41,6 @@ def int64_feature(values):
     values = [values]
   return tf.train.Feature(int64_list=tf.train.Int64List(value=values))
 
-def float_feature(values):
-  """Returns a TF-Feature of floats.
-
-  Args:
-    values: A scalar or list of values.
-
-  Returns:
-    a TF-Feature.
-  """
-  if not isinstance(values, (tuple, list, np.ndarray)):
-    values = [values]
-  return tf.train.Feature(float_list=tf.train.FloatList(value=values))
-
-
-
 def bytes_feature(values):
   """Returns a TF-Feature of bytes.
 
@@ -72,7 +57,7 @@ def image_to_tfexample(image_data, image_format, height, width, class_ids):
   return tf.train.Example(features=tf.train.Features(feature={
       'image/encoded': bytes_feature(image_data),
       'image/format': bytes_feature(image_format),
-      'image/class/labels': float_feature(class_ids),
+      'image/class/labels': int64_feature(class_ids),
       'image/height': int64_feature(height),
       'image/width': int64_feature(width),
   }))

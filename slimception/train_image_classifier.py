@@ -75,6 +75,8 @@ tf.app.flags.DEFINE_integer(
 tf.app.flags.DEFINE_integer(
     'task', 0, 'Task id of the replica running the training.')
 
+tf.app.flags.DEFINE_string("multilabel", True, "Enable multi-label classification")
+
 ######################
 # Optimization Flags #
 ######################
@@ -446,6 +448,9 @@ def main(_):
           batch_size=FLAGS.batch_size,
           num_threads=FLAGS.num_preprocessing_threads,
           capacity=5 * FLAGS.batch_size)
+      if not FLAGS.multilabel:
+        labels = slim.one_hot_encoding(
+            labels, dataset.num_classes - FLAGS.labels_offset)
       batch_queue = slim.prefetch_queue.prefetch_queue(
           [images, labels], capacity=2 * deploy_config.num_clones)
 
@@ -460,13 +465,23 @@ def main(_):
       #############################
       # Specify the loss function #
       #############################
-      if 'AuxLogits' in end_points:
+      if FLAGS.multilabel:
+        if 'AuxLogits' in end_points:
+          tf.losses.sigmoid_cross_entropy(
+              labels, end_points['AuxLogits'], 
+              label_smoothing=FLAGS.label_smoothing, weights=0.4, scope='aux_loss')
         tf.losses.sigmoid_cross_entropy(
-            labels, end_points['AuxLogits'], 
-            label_smoothing=FLAGS.label_smoothing, weights=0.4, scope='aux_loss')
-      tf.losses.sigmoid_cross_entropy(
-          labels, logits,
-          label_smoothing=FLAGS.label_smoothing, weights=1.0)
+            labels, logits,
+            label_smoothing=FLAGS.label_smoothing, weights=1.0)
+      else:
+        if 'AuxLogits' in end_points:
+          tf.losses.softmax_cross_entropy(
+              logits=end_points['AuxLogits'], onehot_labels=labels,
+              label_smoothing=FLAGS.label_smoothing, weights=0.4, scope='aux_loss')
+        tf.losses.softmax_cross_entropy(
+            logits=end_points['AuxLogits'], onehot_labels=labels,
+            label_smoothing=FLAGS.label_smoothing, weights=1.0)
+
       return end_points
 
     # Gather initial summaries.

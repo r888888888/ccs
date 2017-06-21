@@ -19,9 +19,11 @@ from __future__ import division
 from __future__ import print_function
 
 from slimception.datasets import characters
+from slimception.datasets import tags
 
 datasets_map = {
-  'characters': characters
+  'characters': characters,
+  'tags': tags
 }
 
 

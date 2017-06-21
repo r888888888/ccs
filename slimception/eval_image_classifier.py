@@ -26,7 +26,7 @@ import os
 import sys
 sys.path.append(os.path.normpath(os.path.join(__file__, "..", "..")))
 
-from slimception.datasets import characters
+from slimception.datasets import dataset_factory
 from slimception.nets import nets_factory
 from slimception.preprocessing import preprocessing_factory
 
@@ -84,6 +84,10 @@ tf.app.flags.DEFINE_float(
 tf.app.flags.DEFINE_integer(
     'eval_image_size', None, 'Eval image size')
 
+tf.app.flags.DEFINE_boolean(
+    'multilabel', False, "Enable multi-label classification"
+)
+
 FLAGS = tf.app.flags.FLAGS
 
 
@@ -98,7 +102,7 @@ def main(_):
     ######################
     # Select the dataset #
     ######################
-    dataset = characters.get_split(FLAGS.dataset_split_name, FLAGS.dataset_dir)
+    dataset = dataset_factory.get_dataset(FLAGS.dataset_name, FLAGS.dataset_split_name, FLAGS.dataset_dir)
 
     ####################
     # Select the model #
@@ -152,8 +156,11 @@ def main(_):
     else:
       variables_to_restore = slim.get_variables_to_restore()
 
-    predictions = tf.cast(tf.round(logits), tf.int64)
-    labels = tf.cast(tf.squeeze(labels), tf.int64)
+    if FLAGS.multilabel:
+      predictions = tf.round(logits)
+    else:
+      predictions = tf.argmax(logits)
+    labels = tf.squeeze(labels)
 
     # Define the metrics:
     names_to_values, names_to_updates = slim.metrics.aggregate_metric_map({
