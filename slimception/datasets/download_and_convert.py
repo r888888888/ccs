@@ -165,7 +165,7 @@ class DownloaderAndConverter():
       with open(label_path, "w") as f:
         f.write("\n".join(ts.intersection(tags)))
 
-    self._delete_old_images(hashes)
+    #self._delete_old_images(hashes)
     return (list(hashes), tags)
 
   def _label_path(self, hash):

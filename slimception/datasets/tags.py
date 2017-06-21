@@ -59,7 +59,7 @@ def get_split(split_name, dataset_dir, file_pattern=None, reader=None):
   if reader is None:
     reader = tf.TFRecordReader
 
-  with open(os.path.join(dataset_dir, "num_tags.txt"), "r") as f:
+  with open(os.path.join(dataset_dir, "num_tag_classes.txt"), "r") as f:
     num_classes = int(f.read())
 
   with open(os.path.join(dataset_dir, "num_tag_images.txt"), "r") as f:
