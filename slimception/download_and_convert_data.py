@@ -50,9 +50,15 @@ tf.app.flags.DEFINE_string(
 )
 
 tf.app.flags.DEFINE_string(
-  'daataset_name',
+  'dataset_name',
   None,
   "Name of the data set"
+)
+
+tf.app.flags.DEFINE_boolean(
+  'multilabel',
+  None,
+  "Enable multi-label mode"
 )
 
 def main(_):
@@ -63,8 +69,9 @@ def main(_):
     num_classes_file=FLAGS.num_classes_file,
     num_images_file=FLAGS.num_images_file,
     dataset_name=FLAGS.dataset_name,
-    dataset_dir='~/tf-data-multi',
-    source_csv=FLAGS.source_csv
+    dataset_dir=FLAGS.dataset_dir,
+    source_csv=FLAGS.source_csv,
+    multilabel=FLAGS.multilabel
   )
   processor.run()
 

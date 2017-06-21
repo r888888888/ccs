@@ -3,6 +3,9 @@
 set -e
 
 DATA_HOME_DIR=${DATA_HOME_DIR:-~/tf-data-multi}
+INITIAL_STEPS=${INITIAL_STEPS:15000}
+EVAL_STEPS=${EVAL_STEPS:5000}
+CSV=${CSV:posts_tags.csv}
 PRETRAINED_CHECKPOINT_DIR=$DATA_HOME_DIR/checkpoints
 MODEL_DIR=$DATA_HOME_DIR/models
 DATASET_DIR=$DATA_HOME_DIR/dataset
@@ -52,7 +55,8 @@ slimception/download_and_convert_data.py \
   --num_classes_file=num_tag_classes.txt \
   --num_images_file=num_tag_images.txt \
   --dataset_name=tags \
-  --source_csv=posts.csv
+  --source_csv=$CSV \
+  --multilabel=true
 
 # Fine-tune only the new layers for 1000 steps.
 slimception/train_image_classifier.py \
@@ -63,7 +67,7 @@ slimception/train_image_classifier.py \
   --model_name=inception_v4 \
   --checkpoint_path=${PRETRAINED_CHECKPOINT_DIR}/inception_v4.ckpt \
   --checkpoint_exclude_scopes=InceptionV4/Logits,InceptionV4/AuxLogits \
-  --max_number_of_steps=15000 \
+  --max_number_of_steps=${INITIAL_STEPS} \
   --batch_size=32 \
   --learning_rate=0.02 \
   --learning_rate_decay_type=fixed \
@@ -92,7 +96,7 @@ slimception/train_image_classifier.py \
   --dataset_dir=${DATASET_DIR} \
   --model_name=inception_v4 \
   --checkpoint_path=${MODEL_DIR} \
-  --max_number_of_steps=2000 \
+  --max_number_of_steps=${EVAL_STEPS} \
   --batch_size=32 \
   --learning_rate=0.0001 \
   --learning_rate_decay_type=fixed \
