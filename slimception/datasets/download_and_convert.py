@@ -19,7 +19,7 @@ _CSV_SOURCE_FILE = "posts.csv"
 _NUM_CLASSES_FILE = "num_classes.txt"
 _NUM_IMAGES_FILE = "num_images.txt"
 _MIN_TERM_DF = 0.02
-_MAX_TERM_DF = 0.5
+_MAX_TERM_DF = 0.3
 _IGNORE_TAGS = set(["absurdres", "highres", "character_name", "character_request", "commentary", "commentary_request", "copyright_name", "official_art", "translation_request", "translated"])
 
 class ImageReader(object):
