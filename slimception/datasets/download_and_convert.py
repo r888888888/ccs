@@ -18,8 +18,9 @@ _NUM_SHARDS = 5
 _CSV_SOURCE_FILE = "posts.csv"
 _NUM_CLASSES_FILE = "num_classes.txt"
 _NUM_IMAGES_FILE = "num_images.txt"
-_MIN_CHAR_DF = 0.05
-_IGNORE_TAGS = set(["absurdres", "character_name", "character_request", "commentary", "commentary_request", "copyright_name", "official_art", "translation_request", "translated"])
+_MIN_TERM_DF = 0.02
+_MAX_TERM_DF = 0.5
+_IGNORE_TAGS = set(["absurdres", "highres", "character_name", "character_request", "commentary", "commentary_request", "copyright_name", "official_art", "translation_request", "translated"])
 
 class ImageReader(object):
   """Helper class that provides TensorFlow image coding utilities."""
@@ -111,7 +112,7 @@ def _delete_old_images(dataset_dir, hashes):
 
 def _download_images(dataset_dir):
   data = pd.read_csv(os.path.join(dataset_dir, _CSV_SOURCE_FILE))
-  cv = CountVectorizer(min_df=_MIN_CHAR_DF, tokenizer=_tag_tokenizer)
+  cv = CountVectorizer(min_df=_MIN_TERM_DF, max_df=_MAX_TERM_DF, tokenizer=_tag_tokenizer)
   cv.fit(data["tags"])
   tags = set(cv.vocabulary_.keys())
   hashes = set()
