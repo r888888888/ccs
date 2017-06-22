@@ -159,7 +159,7 @@ def main(_):
     if FLAGS.multilabel:
       predictions = tf.round(logits)
     else:
-      predictions = tf.argmax(logits)
+      predictions = tf.argmax(logits, 1)
     labels = tf.squeeze(labels)
 
     # Define the metrics:
