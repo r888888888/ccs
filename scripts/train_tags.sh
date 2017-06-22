@@ -3,9 +3,9 @@
 set -e
 
 DATA_HOME_DIR=${DATA_HOME_DIR:-~/tf-data-multi}
-INITIAL_STEPS=${INITIAL_STEPS:15000}
-EVAL_STEPS=${EVAL_STEPS:5000}
-CSV=${CSV:posts_tags.csv}
+INITIAL_STEPS=${INITIAL_STEPS:-15000}
+EVAL_STEPS=${EVAL_STEPS:-5000}
+CSV=${CSV:-posts_tags.csv}
 PRETRAINED_CHECKPOINT_DIR=$DATA_HOME_DIR/checkpoints
 MODEL_DIR=$DATA_HOME_DIR/models
 DATASET_DIR=$DATA_HOME_DIR/dataset
@@ -55,7 +55,7 @@ slimception/download_and_convert_data.py \
   --num_classes_file=num_tag_classes.txt \
   --num_images_file=num_tag_images.txt \
   --dataset_name=tags \
-  --source_csv=$CSV \
+  --source_csv=${CSV} \
   --multilabel=true
 
 # Fine-tune only the new layers for 1000 steps.
