@@ -11,18 +11,26 @@ import sys
 sys.path.append(os.path.normpath(os.path.join(__file__, "..", "..")))
 
 import tensorflow as tf
-from slimception.datasets import characters
 from slimception.preprocessing import preprocessing_factory
 from slimception.nets import nets_factory
 from slimception.datasets import dataset_factory
 
 slim = tf.contrib.slim
 
+tf.app.flags.DEFINE_string('dataset_name', "tags", 'The name of the dataset.')
+tf.app.flags.DEFINE_string('dataset_dir', '~/tf-data/dataset', 'path to dataset')
+tf.app.flags.DEFINE_boolean('multilabel', True, 'Enable mutilabel mode')
+
+FLAGS = tf.app.flags.FLAGS
+
 def get_md5(string):
   return re.search(r"[a-f0-9]{32}", string).group(0)
 
+def get_checkpoints_dir():
+  return os.path.normpath(os.path.join(FLAGS.dataset_dir, "..", "checkpoints"))
+
 def get_label_path(md5):
-  return "/home/danbooru/tf-data/image_labels/{}.txt".format(md5)
+  return os.path.normpath(os.path.join(FLAGS.dataset_dir, "..", "image_labels", "{}.txt".format(md5)))
 
 def classify_image(path, labels, dataset, image_processing_fn, reuse):
   with open(path, "rb") as f:
@@ -39,7 +47,10 @@ def classify_image(path, labels, dataset, image_processing_fn, reuse):
   processed_image = image_processing_fn(image, eval_image_size, eval_image_size)
   processed_images = tf.expand_dims(processed_image, 0)
   logits, _ = network_fn(processed_images)
-  probabilities = tf.nn.sigmoid(logits)
+  if FLAGS.multilabel:
+    probabilities = tf.nn.sigmoid(logits)
+  else:
+    probabilities = tf.nn.softmax(logits)
   checkpoint_path = tf.train.latest_checkpoint(FLAGS.checkpoints_dir)
   variables_to_restore = slim.get_variables_to_restore()
   init_fn = slim.assign_from_checkpoint_fn(checkpoint_path, variables_to_restore)
@@ -53,7 +64,7 @@ def classify_image(path, labels, dataset, image_processing_fn, reuse):
 def main(_):
   with tf.Graph().as_default():
     dataset = dataset_factory.get_dataset(
-      "characters", 
+      FLAGS.dataset_name, 
       "validation",
       FLAGS.dataset_dir
     )
@@ -61,7 +72,7 @@ def main(_):
       "inception_v4",
       is_training=False
     )
-    with open(os.path.join(FLAGS.dataset_dir, "labels.txt"), "r") as f:
+    with open(os.path.join(get_checkpoints_dir(), "labels.txt"), "r") as f:
       labels = [re.sub(r"^\d+:", "", x) for x in f.read().split()]
 
     looping = True
@@ -80,11 +91,6 @@ def main(_):
         print("actual: {}".format(actual_label))
       except EOFError:
         looping = False
-
-tf.app.flags.DEFINE_string('checkpoints_dir', '/home/danbooru/tf-data/models/all', 'path to checkpoints')
-tf.app.flags.DEFINE_string('dataset_dir', '/home/danbooru/tf-data/dataset', 'path to dataset')
-
-FLAGS = tf.app.flags.FLAGS
 
 if __name__ == "__main__":
   tf.app.run()

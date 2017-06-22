@@ -357,7 +357,7 @@ def _get_init_fn():
   else:
     checkpoint_path = FLAGS.checkpoint_path
 
-  tf.logging.info('Fine-tuning from %s' % checkpoint_path)
+  tf.logging.info('Training from %s' % checkpoint_path)
 
   return slim.assign_from_checkpoint_fn(
       checkpoint_path,
