@@ -157,17 +157,26 @@ def main(_):
       variables_to_restore = slim.get_variables_to_restore()
 
     if FLAGS.multilabel:
-      predictions = tf.round(logits)
+      predictions = tf.greater(logits, tf.constant(0.0, dtype=tf.float32))
+      labels = tf.cast(labels, tf.int64)
+      predictions = tf.Print(predictions, [predictions], message="predictions: ", summarize=428)
+      labels = tf.Print(labels, [labels], message="labels: ", summarize=428)
+      names_to_values, names_to_updates = slim.metrics.aggregate_metric_map({
+        'precision': slim.metrics.streaming_precision(predictions, labels),
+        'recall': slim.metrics.streaming_recall(predictions, labels)
+      })
+
     else:
       predictions = tf.argmax(logits, 1)
-    labels = tf.squeeze(labels)
+      labels = tf.squeeze(labels)
+      predictions = tf.Print(predictions, [predictions], message="predictions: ", summarize=428)
+      labels = tf.Print(labels, [labels], message="labels: ", summarize=428)
+      names_to_values, names_to_updates = slim.metrics.aggregate_metric_map({
+        'Precision': slim.metrics.streaming_precision(predictions, labels),
+        'Recall': slim.metrics.streaming_recall(predictions, labels, 5)
+      })
 
     # Define the metrics:
-    names_to_values, names_to_updates = slim.metrics.aggregate_metric_map({
-      'Accuracy': slim.metrics.streaming_accuracy(predictions, labels),
-      'Precision_5': slim.metrics.streaming_sparse_precision_at_top_k(predictions, labels, 5),
-      'Recall_5': slim.metrics.streaming_sparse_recall_at_k(predictions, labels, 5)
-    })
 
     # Print the summaries to screen.
     for name, value in names_to_values.items():
