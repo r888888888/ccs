@@ -11,6 +11,7 @@ import sys
 from datasets import dataset_utils
 from itertools import islice
 from pathlib import Path
+import time
 
 def _tag_tokenizer(x):
   return x.split()
@@ -163,7 +164,15 @@ class DownloaderAndConverter():
         hashes.add(md5)
         if not os.path.isfile(local_path):
           print("downloading", url)
-          urllib.request.urlretrieve(url, local_path)
+          while True:
+            try:
+              urllib.request.urlretrieve(url, local_path)
+            except http.client.RemoteDisconnected:
+              time.sleep(5)
+              print("remote disconnected")
+              continue
+            break
+
         with open(label_path, "w") as f:
           f.write("\n".join(ts.intersection(tags)))
 
