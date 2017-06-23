@@ -119,7 +119,7 @@ class DownloaderAndConverter():
                   class_ids
                 )
                 tfrecord_writer.write(example.SerializeToString())
-              except tensorflow.python.framework.errors_impl.InvalidArgumentError:
+              except tf.errors.InvalidArgumentError:
                 print("error reading image")
 
     sys.stdout.write('\n')
