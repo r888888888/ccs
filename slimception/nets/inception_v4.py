@@ -258,7 +258,8 @@ def inception_v4(inputs, num_classes=1001, is_training=True,
                  dropout_keep_prob=0.8,
                  reuse=None,
                  scope='InceptionV4',
-                 create_aux_logits=True):
+                 create_aux_logits=True,
+                 prediction_fn=tf.nn.softmax):
   """Creates the Inception V4 model.
 
   Args:
@@ -315,7 +316,7 @@ def inception_v4(inputs, num_classes=1001, is_training=True,
           logits = slim.fully_connected(net, num_classes, activation_fn=None,
                                         scope='Logits')
           end_points['Logits'] = logits
-          end_points['Predictions'] = tf.nn.softmax(logits, name='Predictions')
+          end_points['Predictions'] = prediction_fn(logits, name='Predictions')
     return logits, end_points
 inception_v4.default_image_size = 299
 

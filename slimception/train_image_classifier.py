@@ -412,11 +412,17 @@ def main(_):
     ######################
     # Select the network #
     ######################
+    if FLAGS.multilabel:
+      prediction_fn = tf.nn.sigmoid
+    else:
+      prediction_fn = tf.nn.softmax
+      
     network_fn = nets_factory.get_network_fn(
         FLAGS.model_name,
         num_classes=(dataset.num_classes - FLAGS.labels_offset),
         weight_decay=FLAGS.weight_decay,
-        is_training=True)
+        is_training=True,
+        prediction_fn=prediction_fn)
 
     #####################################
     # Select the preprocessing function #
