@@ -65,7 +65,7 @@ def main(_):
   if not FLAGS.dataset_dir:
     raise ValueError('You must supply the dataset directory with --dataset_dir')
 
-  ignore_tags = set(["absurdres", "highres", "character_name", "character_request", "commentary", "commentary_request", "copyright_name", "official_art", "translation_request", "translated", "transparent_background", "twitter_username", "1boy", "2boys", "1girl", "2girls", "3girls", "simple_background", "white_background"])  
+  ignore_tags = set(["absurdres", "highres", "character_name", "character_request", "commentary", "commentary_request", "copyright_name", "official_art", "translation_request", "translated", "transparent_background", "twitter_username", "1boy", "2boys", "1girl", "2girls", "3girls", "multiple_girls", "original", "simple_background", "white_background"])  
   processor = download_and_convert.DownloaderAndConverter(
     num_classes_file=FLAGS.num_classes_file,
     num_images_file=FLAGS.num_images_file,

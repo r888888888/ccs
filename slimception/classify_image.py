@@ -51,6 +51,7 @@ def classify_image(path, labels, dataset, image_processing_fn, reuse):
 
   eval_image_size = network_fn.default_image_size
   processed_image = image_processing_fn(image, eval_image_size, eval_image_size)
+  processed_image = tf.reshape(processed_image, (eval_image_size, eval_image_size, 3))
   processed_images = tf.expand_dims(processed_image, 0)
   logits, _ = network_fn(processed_images)
   if FLAGS.multilabel:

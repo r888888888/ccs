@@ -48,7 +48,7 @@ class DownloaderAndConverter():
     self._source_csv = kwargs.get('source_csv', 'posts.csv')
     self._random_seed = kwargs.get('random_seed', 42)
     self._min_term_df = kwargs.get('min_term_df', 0.02)
-    self._max_term_df = kwargs.get('max_term_df', 0.3)
+    self._max_term_df = kwargs.get('max_term_df', 0.2)
     self._ignore_tags = kwargs.get('ignore_tags', set())
     self._validation_percentage = kwargs.get('validation_percentage', 0.9)
     self._multilabel = kwargs.get('multilabel', False)
