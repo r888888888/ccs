@@ -14,6 +14,7 @@ from pathlib import Path
 import time
 import http
 from concurrent.futures import ThreadPoolExecutor
+from functools import partial
 
 def _tag_tokenizer(x):
   return x.split()
