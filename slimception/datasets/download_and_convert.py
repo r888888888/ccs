@@ -182,7 +182,7 @@ class DownloaderAndConverter():
 
     self._delete_all_labels()
     download_image_wrapper = partial(self._download_image, tags=tags, hashes=hashes)
-    with ThreadPoolExecutor(max_workers=8) as pool:
+    with ThreadPoolExecutor(max_workers=16) as pool:
       pool.map(download_image_wrapper, data.iterrows())
 
     #self._delete_old_images(hashes)
