@@ -185,6 +185,8 @@ class DownloaderAndConverter():
     pool = multiprocessing.Pool(processes=4)
     download_image_wrapper = partial(self._download_image, tags=tags, hashes=hashes)
     pool.map(download_image_wrapper, data.iterrows())
+    pool.close()
+    pool.join()
 
     #self._delete_old_images(hashes)
     return (list(hashes), tags)
