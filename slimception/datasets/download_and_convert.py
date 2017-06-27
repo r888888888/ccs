@@ -13,6 +13,8 @@ from itertools import islice
 from pathlib import Path
 import time
 import http
+import multiprocessing
+from functools import partial
 
 def _tag_tokenizer(x):
   return x.split()
@@ -144,41 +146,45 @@ class DownloaderAndConverter():
         print("deleting", str(file))
         file.unlink()
 
+  def _download_image(self, args, tags=None, hashes=None):
+    row = args[1]
+    md5 = row["md5"]
+    url = row["url"]
+    ts = set(row["tags"].split(" "))
+    ts = ts - self._ignore_tags
+    if len(ts) > 0:
+      ext = url.split(".")[-1]
+      local_path = self._image_path(md5, ext)
+      label_path = self._label_path(md5)
+      hashes.add(md5)
+    if not os.path.isfile(local_path):
+      print("downloading", url)
+      while True:
+        try:
+          urllib.request.urlretrieve(url, local_path)
+        except http.client.RemoteDisconnected:
+          time.sleep(5)
+          print("  remote disconnected")
+          continue
+        break
+    with open(label_path, "w") as f:
+      f.write("\n".join(ts.intersection(tags)))
+
   def _download_images(self):
+    hashes = set()
     data = pd.read_csv(os.path.join(self._dataset_dir, self._source_csv))
+    data["tags"].dropna(inplace=True)
     cv = CountVectorizer(min_df=self._min_term_df, max_df=self._max_term_df, tokenizer=_tag_tokenizer)
     cv.fit(data["tags"])
     tags = set(cv.vocabulary_.keys())
-    hashes = set()
 
     with open(os.path.join(self._dataset_dir, self._num_classes_file), "w") as f:
       f.write(str(len(tags)))
 
     self._delete_all_labels()
-
-    for index, row in data.iterrows():
-      md5 = row["md5"]
-      url = row["url"]
-      ts = set(row["tags"].split(" "))
-      ts = ts - self._ignore_tags
-      if len(ts) > 0:
-        ext = url.split(".")[-1]
-        local_path = self._image_path(md5, ext)
-        label_path = self._label_path(md5)
-        hashes.add(md5)
-        if not os.path.isfile(local_path):
-          print("downloading", url)
-          while True:
-            try:
-              urllib.request.urlretrieve(url, local_path)
-            except http.client.RemoteDisconnected:
-              time.sleep(5)
-              print("remote disconnected")
-              continue
-            break
-
-        with open(label_path, "w") as f:
-          f.write("\n".join(ts.intersection(tags)))
+    pool = multiprocessing.Pool(processes=4)
+    download_image_wrapper = partial(self._download_image, tags=tags, hashes=hashes)
+    pool.map(download_image_wrapper, data.iterrows())
 
     #self._delete_old_images(hashes)
     return (list(hashes), tags)
