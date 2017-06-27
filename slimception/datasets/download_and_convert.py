@@ -13,8 +13,7 @@ from itertools import islice
 from pathlib import Path
 import time
 import http
-import multiprocessing
-from functools import partial
+from concurrent.futures import ThreadPoolExecutor
 
 def _tag_tokenizer(x):
   return x.split()
@@ -182,11 +181,9 @@ class DownloaderAndConverter():
       f.write(str(len(tags)))
 
     self._delete_all_labels()
-    pool = multiprocessing.Pool(processes=8)
     download_image_wrapper = partial(self._download_image, tags=tags, hashes=hashes)
-    pool.imap_unordered(download_image_wrapper, data.iterrows())
-    pool.close()
-    pool.join()
+    with ThreadPoolExecutor(max_workers=8) as pool:
+      pool.map(download_image_wrapper, data.iterrows())
 
     #self._delete_old_images(hashes)
     return (list(hashes), tags)
