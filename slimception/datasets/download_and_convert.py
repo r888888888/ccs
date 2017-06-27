@@ -173,7 +173,7 @@ class DownloaderAndConverter():
   def _download_images(self):
     hashes = set()
     data = pd.read_csv(os.path.join(self._dataset_dir, self._source_csv))
-    data["tags"].dropna(inplace=True)
+    data.dropna(inplace=True, how='any')
     cv = CountVectorizer(min_df=self._min_term_df, max_df=self._max_term_df, tokenizer=_tag_tokenizer)
     cv.fit(data["tags"])
     tags = set(cv.vocabulary_.keys())
