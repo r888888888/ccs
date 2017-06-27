@@ -182,9 +182,9 @@ class DownloaderAndConverter():
       f.write(str(len(tags)))
 
     self._delete_all_labels()
-    pool = multiprocessing.Pool(processes=4)
+    pool = multiprocessing.Pool(processes=8)
     download_image_wrapper = partial(self._download_image, tags=tags, hashes=hashes)
-    pool.map(download_image_wrapper, data.iterrows())
+    pool.imap_unordered(download_image_wrapper, data.iterrows())
     pool.close()
     pool.join()
 
