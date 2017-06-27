@@ -412,17 +412,11 @@ def main(_):
     ######################
     # Select the network #
     ######################
-    if FLAGS.multilabel:
-      prediction_fn = tf.nn.sigmoid
-    else:
-      prediction_fn = tf.nn.softmax
-      
     network_fn = nets_factory.get_network_fn(
         FLAGS.model_name,
         num_classes=(dataset.num_classes - FLAGS.labels_offset),
         weight_decay=FLAGS.weight_decay,
-        is_training=True,
-        prediction_fn=prediction_fn)
+        is_training=True)
 
     #####################################
     # Select the preprocessing function #
@@ -485,7 +479,7 @@ def main(_):
               logits=end_points['AuxLogits'], onehot_labels=labels,
               label_smoothing=FLAGS.label_smoothing, weights=0.4, scope='aux_loss')
         tf.losses.softmax_cross_entropy(
-            logits=end_points['AuxLogits'], onehot_labels=labels,
+            logits=logits, onehot_labels=labels,
             label_smoothing=FLAGS.label_smoothing, weights=1.0)
 
       return end_points

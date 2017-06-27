@@ -316,7 +316,7 @@ def inception_v4(inputs, num_classes=1001, is_training=True,
           logits = slim.fully_connected(net, num_classes, activation_fn=None,
                                         scope='Logits')
           end_points['Logits'] = logits
-          end_points['Predictions'] = prediction_fn(logits, name='Predictions')
+          #end_points['Predictions'] = prediction_fn(logits, name='Predictions')
     return logits, end_points
 inception_v4.default_image_size = 299
 

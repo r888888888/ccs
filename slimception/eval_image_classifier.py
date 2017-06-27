@@ -157,10 +157,12 @@ def main(_):
       variables_to_restore = slim.get_variables_to_restore()
 
     if FLAGS.multilabel:
-      predictions = tf.greater(logits, tf.constant(0.0, dtype=tf.float32))
+      probabilities = tf.nn.sigmoid(logits)
+      probabilities = tf.Print(probabilities, [probabilities], message="probabilities: ", summarize=dataset.num_classes)
+      predictions = tf.round(probabilities)
+      predictions = tf.Print(predictions, [predictions], message="predictions: ", summarize=dataset.num_classes)
       labels = tf.cast(labels, tf.int64)
-      predictions = tf.Print(predictions, [predictions], message="predictions: ", summarize=428)
-      labels = tf.Print(labels, [labels], message="labels: ", summarize=428)
+      labels = tf.Print(labels, [labels], message="labels: ", summarize=dataset.num_classes)
       names_to_values, names_to_updates = slim.metrics.aggregate_metric_map({
         'precision': slim.metrics.streaming_precision(predictions, labels),
         'recall': slim.metrics.streaming_recall(predictions, labels)
@@ -169,8 +171,8 @@ def main(_):
     else:
       predictions = tf.argmax(logits, 1)
       labels = tf.squeeze(labels)
-      predictions = tf.Print(predictions, [predictions], message="predictions: ", summarize=428)
-      labels = tf.Print(labels, [labels], message="labels: ", summarize=428)
+      predictions = tf.Print(predictions, [predictions], message="predictions: ", summarize=dataset.num_classes)
+      labels = tf.Print(labels, [labels], message="labels: ", summarize=dataset.num_classes)
       names_to_values, names_to_updates = slim.metrics.aggregate_metric_map({
         'Precision': slim.metrics.streaming_precision(predictions, labels),
         'Recall': slim.metrics.streaming_recall(predictions, labels, 5)
