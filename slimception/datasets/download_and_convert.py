@@ -97,32 +97,33 @@ class DownloaderAndConverter():
 
               # Read the filename:
               image_path = self._image_path(hashes[i])
-              image_data = tf.gfile.FastGFile(image_path, 'rb').read()
-              try:
-                height, width = image_reader.read_image_dims(sess, image_data)
+              if tf.gfile.Exists(image_path):
+                image_data = tf.gfile.FastGFile(image_path, 'rb').read()
+                try:
+                  height, width = image_reader.read_image_dims(sess, image_data)
 
-                num_classes = len(class_names_to_ids)
-                if self._multilabel:
-                  class_names = self._read_labels(hashes[i])
-                  class_ids = np.zeros(num_classes, dtype=np.int64)
-                  for x in class_names:
-                    class_ids[class_names_to_ids[x]] = 1
-                else:
-                  class_name = self._read_labels(hashes[i])
-                  class_ids = class_names_to_ids[class_name]
+                  num_classes = len(class_names_to_ids)
+                  if self._multilabel:
+                    class_names = self._read_labels(hashes[i])
+                    class_ids = np.zeros(num_classes, dtype=np.int64)
+                    for x in class_names:
+                      class_ids[class_names_to_ids[x]] = 1
+                  else:
+                    class_name = self._read_labels(hashes[i])
+                    class_ids = class_names_to_ids[class_name]
 
-                ext = image_path.split(".")[-1]
+                  ext = image_path.split(".")[-1]
 
-                example = dataset_utils.image_to_tfexample(
-                  image_data, 
-                  ext.encode(), 
-                  height, 
-                  width, 
-                  class_ids
-                )
-                tfrecord_writer.write(example.SerializeToString())
-              except tf.errors.InvalidArgumentError:
-                print("error reading image")
+                  example = dataset_utils.image_to_tfexample(
+                    image_data, 
+                    ext.encode(), 
+                    height, 
+                    width, 
+                    class_ids
+                  )
+                  tfrecord_writer.write(example.SerializeToString())
+                except tf.errors.InvalidArgumentError:
+                  print("error reading image")
 
     sys.stdout.write('\n')
     sys.stdout.flush()

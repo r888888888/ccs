@@ -76,7 +76,8 @@ slimception/train_image_classifier.py \
   --log_every_n_steps=100 \
   --optimizer=adam \
   --weight_decay=0.00004 \
-  --multilabel=true
+  --multilabel=true \
+  --label-smoothing=0.2
 
 # Run evaluation.
 slimception/eval_image_classifier.py \
@@ -105,7 +106,8 @@ slimception/train_image_classifier.py \
   --log_every_n_steps=100 \
   --optimizer=adam \
   --weight_decay=0.00004 \
-  --multilabel=true
+  --multilabel=true \
+  --label-smoothing=0.2
 
 # Run evaluation.
 slimception/eval_image_classifier.py \
