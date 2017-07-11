@@ -68,10 +68,10 @@ slimception/train_image_classifier.py \
   --checkpoint_exclude_scopes=InceptionV4/Logits,InceptionV4/AuxLogits \
   --max_number_of_steps=${INITIAL_STEPS} \
   --batch_size=32 \
-  --learning_rate=0.02 \
+  --learning_rate=0.04 \
   --learning_rate_decay_type=fixed \
-  --save_interval_secs=60 \
-  --save_summaries_secs=60 \
+  --save_interval_secs=300 \
+  --save_summaries_secs=300 \
   --log_every_n_steps=100 \
   --optimizer=adam \
   --weight_decay=0.00004 \
@@ -99,8 +99,8 @@ slimception/train_image_classifier.py \
   --batch_size=32 \
   --learning_rate=0.0001 \
   --learning_rate_decay_type=fixed \
-  --save_interval_secs=60 \
-  --save_summaries_secs=60 \
+  --save_interval_secs=300 \
+  --save_summaries_secs=300 \
   --log_every_n_steps=100 \
   --optimizer=adam \
   --weight_decay=0.00004 \

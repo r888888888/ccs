@@ -426,7 +426,7 @@ def main(_):
     image_preprocessing_fn = preprocessing_factory.get_preprocessing(
         preprocessing_name,
         is_training=True,
-        fast_mode=False)
+        fast_mode=True)
 
     ##############################################################
     # Create a dataset provider that loads data from the dataset #

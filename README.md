@@ -1,4 +1,4 @@
-## Class Classification Service
+## Character Classification Service
 
 CCS takes an image and returns a small list of the most likely character tags found in the image.
 
