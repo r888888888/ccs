@@ -3,8 +3,8 @@
 set -e
 
 DATA_HOME_DIR=${DATA_HOME_DIR:-~/tf-data-multi}
-INITIAL_STEPS=${INITIAL_STEPS:-15000}
-EVAL_STEPS=${EVAL_STEPS:-5000}
+INITIAL_STEPS=${INITIAL_STEPS:-50000}
+EVAL_STEPS=${EVAL_STEPS:-2000}
 CSV=${CSV:-posts_tags.csv}
 PRETRAINED_CHECKPOINT_DIR=$DATA_HOME_DIR/checkpoints
 MODEL_DIR=$DATA_HOME_DIR/models
@@ -69,15 +69,15 @@ slimception/train_image_classifier.py \
   --checkpoint_exclude_scopes=InceptionV4/Logits,InceptionV4/AuxLogits \
   --max_number_of_steps=${INITIAL_STEPS} \
   --batch_size=32 \
-  --learning_rate=0.02 \
+  --learning_rate=0.04 \
   --learning_rate_decay_type=fixed \
-  --save_interval_secs=60 \
-  --save_summaries_secs=60 \
+  --save_interval_secs=300 \
+  --save_summaries_secs=1800 \
   --log_every_n_steps=100 \
   --optimizer=adam \
   --weight_decay=0.00004 \
   --multilabel=true \
-  --label-smoothing=0.2
+  --label-smoothing=0.1
 
 # Run evaluation.
 slimception/eval_image_classifier.py \
@@ -101,13 +101,13 @@ slimception/train_image_classifier.py \
   --batch_size=32 \
   --learning_rate=0.0001 \
   --learning_rate_decay_type=fixed \
-  --save_interval_secs=60 \
-  --save_summaries_secs=60 \
+  --save_interval_secs=300 \
+  --save_summaries_secs=1800 \
   --log_every_n_steps=100 \
   --optimizer=adam \
   --weight_decay=0.00004 \
   --multilabel=true \
-  --label-smoothing=0.2
+  --label-smoothing=0.1
 
 # Run evaluation.
 slimception/eval_image_classifier.py \

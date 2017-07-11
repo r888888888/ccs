@@ -157,7 +157,7 @@ def main(_):
       variables_to_restore = slim.get_variables_to_restore()
 
     if FLAGS.multilabel:
-      probabilities = tf.nn.sigmoid(logits)
+      probabilities = tf.nn.elu(logits)
       probabilities = tf.Print(probabilities, [probabilities], message="probabilities: ", summarize=dataset.num_classes)
       predictions = tf.round(probabilities)
       predictions = tf.Print(predictions, [predictions], message="predictions: ", summarize=dataset.num_classes)

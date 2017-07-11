@@ -55,7 +55,7 @@ def classify_image(path, labels, dataset, image_processing_fn, reuse):
   processed_images = tf.expand_dims(processed_image, 0)
   logits, _ = network_fn(processed_images)
   if FLAGS.multilabel:
-    probabilities = tf.nn.sigmoid(logits)
+    probabilities = tf.nn.relu(logits)
   else:
     probabilities = tf.nn.softmax(logits)
   checkpoint_path = tf.train.latest_checkpoint(get_checkpoints_dir())
@@ -66,7 +66,7 @@ def classify_image(path, labels, dataset, image_processing_fn, reuse):
     init_fn(sess)
     np_image, network_input, probabilities = sess.run([image, processed_image, probabilities])
     probabilities = probabilities[0, 0:]
-    return sorted(zip(probabilities, labels), reverse=True)[0:3]
+    return sorted(zip(probabilities, labels), reverse=True)[0:5]
 
 def main(_):
   with tf.Graph().as_default():
@@ -96,6 +96,7 @@ def main(_):
       for score, label in results:
         print(label, "%.2f" % score)
       print("actual: {}".format(actual_label))
+      print("\n\n\n")
 
 
 if __name__ == "__main__":
