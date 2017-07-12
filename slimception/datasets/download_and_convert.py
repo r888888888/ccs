@@ -110,6 +110,8 @@ class DownloaderAndConverter():
                       class_ids[class_names_to_ids[x]] = 1
                   else:
                     class_name = self._read_labels(hashes[i])
+                    if class_name is None:
+                      continue
                     class_ids = class_names_to_ids[class_name]
 
                   ext = image_path.split(".")[-1]
@@ -153,11 +155,14 @@ class DownloaderAndConverter():
     url = row["url"]
     ts = set(row["tags"].split(" "))
     ts = ts - self._ignore_tags
+    ts = ts.intersection(tags)
     if len(ts) > 0:
       ext = url.split(".")[-1]
       local_path = self._image_path(md5, ext)
       label_path = self._label_path(md5)
       hashes.add(md5)
+    else:
+      return
     if not os.path.isfile(local_path):
       while True:
         try:
@@ -170,7 +175,7 @@ class DownloaderAndConverter():
         break
     with open(label_path, "w") as f:
       print("writing label", md5)
-      f.write("\n".join(ts.intersection(tags)))
+      f.write("\n".join(ts))
 
   def _download_images(self):
     hashes = set()
@@ -195,6 +200,9 @@ class DownloaderAndConverter():
     return os.path.normpath(os.path.join(self._dataset_dir, "..", "image_labels/{}.txt".format(hash)))
 
   def _read_labels(self, hash):
+    if not os.path.isfile(self._label_path(hash)):
+      return None
+
     with open(self._label_path(hash), "r") as f:
       if self._multilabel:
         return f.read().split()
