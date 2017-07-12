@@ -25,7 +25,7 @@ from slimception.preprocessing import inception_preprocessing
 slim = tf.contrib.slim
 
 
-def get_preprocessing(name, is_training=False, fast_mode=False):
+def get_preprocessing(name, is_training=False, fast_mode=True):
   """Returns preprocessing_fn(image, height, width, **kwargs).
 
   Args:

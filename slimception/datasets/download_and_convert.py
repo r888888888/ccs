@@ -49,8 +49,8 @@ class DownloaderAndConverter():
     self._dataset_dir = kwargs.get('dataset_dir', '~/tf-data')
     self._source_csv = kwargs.get('source_csv', 'posts.csv')
     self._random_seed = kwargs.get('random_seed', 42)
-    self._min_term_df = kwargs.get('min_term_df', 0.02)
-    self._max_term_df = kwargs.get('max_term_df', 0.2)
+    self._min_term_df = kwargs.get('min_term_df', 200)
+    self._max_term_df = kwargs.get('max_term_df', 0.4)
     self._ignore_tags = kwargs.get('ignore_tags', set())
     self._validation_percentage = kwargs.get('validation_percentage', 0.9)
     self._multilabel = kwargs.get('multilabel', False)
@@ -159,16 +159,17 @@ class DownloaderAndConverter():
       label_path = self._label_path(md5)
       hashes.add(md5)
     if not os.path.isfile(local_path):
-      print("downloading", url)
       while True:
         try:
-          urllib.request.urlretrieve(url, local_path)
+          res = urllib.request.urlretrieve(url, local_path)
+          print("downloaded to", res)
         except http.client.RemoteDisconnected:
           time.sleep(5)
           print("  remote disconnected")
           continue
         break
     with open(label_path, "w") as f:
+      print("writing label", md5)
       f.write("\n".join(ts.intersection(tags)))
 
   def _download_images(self):
@@ -184,7 +185,7 @@ class DownloaderAndConverter():
 
     self._delete_all_labels()
     download_image_wrapper = partial(self._download_image, tags=tags, hashes=hashes)
-    with ThreadPoolExecutor(max_workers=16) as pool:
+    with ThreadPoolExecutor(max_workers=4) as pool:
       pool.map(download_image_wrapper, data.iterrows())
 
     #self._delete_old_images(hashes)

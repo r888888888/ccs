@@ -53,9 +53,9 @@ fi
 slimception/download_and_convert_data.py \
   --dataset_dir=${DATASET_DIR} \
   --num_classes_file=num_char_classes.txt \
-  --num_images_file=num_cagar_images.txt \
+  --num_images_file=num_char_images.txt \
   --dataset_name=characters \
-  --source_csv=posts.csv
+  --source_csv=${CSV}
 
 # Fine-tune only the new layers for 1000 steps.
 slimception/train_image_classifier.py \
