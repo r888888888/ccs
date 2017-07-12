@@ -75,7 +75,7 @@ slimception/train_image_classifier.py \
   --log_every_n_steps=100 \
   --optimizer=adam \
   --weight_decay=0.00004 \
-  --multilabel=false
+  --multilabel=False
 
 # Run evaluation.
 slimception/eval_image_classifier.py \
@@ -85,7 +85,7 @@ slimception/eval_image_classifier.py \
   --dataset_split_name=validation \
   --dataset_dir=${DATASET_DIR} \
   --model_name=inception_v4 \
-  --multilabel=false
+  --multilabel=False
 
 # Fine-tune all the new layers for 500 steps.
 slimception/train_image_classifier.py \
@@ -104,7 +104,7 @@ slimception/train_image_classifier.py \
   --log_every_n_steps=100 \
   --optimizer=adam \
   --weight_decay=0.00004 \
-  --multilabel=false
+  --multilabel=False
 
 # Run evaluation.
 slimception/eval_image_classifier.py \
@@ -114,4 +114,4 @@ slimception/eval_image_classifier.py \
   --dataset_split_name=validation \
   --dataset_dir=${DATASET_DIR} \
   --model_name=inception_v4 \
-  --multilabel=false
+  --multilabel=False
