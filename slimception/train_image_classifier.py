@@ -416,8 +416,7 @@ def main(_):
         FLAGS.model_name,
         num_classes=(dataset.num_classes - FLAGS.labels_offset),
         weight_decay=FLAGS.weight_decay,
-        is_training=True,
-        dropout_keep_prob=0.9)
+        is_training=True)
 
     #####################################
     # Select the preprocessing function #
