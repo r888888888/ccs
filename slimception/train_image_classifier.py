@@ -75,7 +75,7 @@ tf.app.flags.DEFINE_integer(
 tf.app.flags.DEFINE_integer(
     'task', 0, 'Task id of the replica running the training.')
 
-tf.app.flags.DEFINE_string("multilabel", True, "Enable multi-label classification")
+tf.app.flags.DEFINE_string("multilabel", False, "Enable multi-label classification")
 
 ######################
 # Optimization Flags #
