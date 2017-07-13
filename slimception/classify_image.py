@@ -35,7 +35,6 @@ def get_label_path(md5):
 
 def get_random_image():
   files = os.listdir(os.path.join(FLAGS.dataset_dir, "..", "images"))
-  # files = [x for x in files if "jpg" in x]
   return os.path.join(FLAGS.dataset_dir, "..", "images", random.choice(files))
 
 def classify_image(path, labels, dataset, image_processing_fn, reuse):
@@ -84,8 +83,10 @@ def main(_):
       labels = [re.sub(r"^\d+:", "", x) for x in f.read().split()]
 
     reuse = False
-    for i in range(1, 10):
+    for i in range(1, 25):
       path = get_random_image()
+      if not os.path.isfile(path):
+        continue
       print(path)
       results = classify_image(path, labels, dataset, image_processing_fn, reuse)
       reuse = True
