@@ -85,13 +85,13 @@ def main(_):
     reuse = False
     for i in range(1, 25):
       path = get_random_image()
-      if not os.path.isfile(path):
+      label_path = get_label_path(md5)
+      if not os.path.isfile(label_path):
         continue
       print(path)
       results = classify_image(path, labels, dataset, image_processing_fn, reuse)
       reuse = True
       md5 = get_md5(path)
-      label_path = get_label_path(md5)
       with open(label_path, "r") as f:
         actual_label = " ".join(f.read().split())
       for score, label in results:
