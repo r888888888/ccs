@@ -24,7 +24,7 @@ from slimception.datasets import dataset_utils
 
 slim = tf.contrib.slim
 
-_FILE_PATTERN = 'chars_%s_*.tfrecord'
+_FILE_PATTERN = 'characters_%s_*.tfrecord'
 _SPLITS_TO_SIZES = {'train': 0.9, 'validation': 0.1}
 _ITEMS_TO_DESCRIPTIONS = {
   'image': 'A color image of varying size.',

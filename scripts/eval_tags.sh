@@ -57,4 +57,4 @@ slimception/eval_image_classifier.py \
   --dataset_split_name=validation \
   --dataset_dir=${DATASET_DIR} \
   --model_name=inception_v4 \
-  --multilabel=true
+  --multilabel=True
