@@ -69,7 +69,7 @@ slimception/train_image_classifier.py \
   --max_number_of_steps=${INITIAL_STEPS} \
   --batch_size=32 \
   --learning_rate=0.04 \
-  --learning_rate_decay_type=fixed \
+  --learning_rate_decay_type=exponential \
   --save_interval_secs=300 \
   --save_summaries_secs=300 \
   --log_every_n_steps=100 \
