@@ -5,6 +5,6 @@ MAINTAINER Albert Yi "r888888888@gmail.com"
 RUN apt-get update -y
 COPY . /app
 WORKDIR /app
-RUN pip install -r requirements.txt
+RUN pip3 install -r requirements.txt
 ENTRYPOINT ["python3"]
 CMD ["web/ccs.py"]
