@@ -46,7 +46,7 @@ class DownloaderAndConverter():
     self._num_images_file = kwargs.get('num_images_file', 'num_images.txt')
     self._num_shards = kwargs.get('num_shards', 5)
     self._dataset_name = kwargs.get('dataset_name')
-    self._dataset_dir = kwargs.get('dataset_dir', '~/tf-data')
+    self._dataset_dir = kwargs.get('dataset_dir', os.path.expanduser('~/tf-data'))
     self._source_csv = kwargs.get('source_csv', 'posts.csv')
     self._random_seed = kwargs.get('random_seed', 42)
     self._min_term_df = kwargs.get('min_term_df', 200)
