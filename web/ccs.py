@@ -87,16 +87,14 @@ class ReverseProxied(object):
             environ['wsgi.url_scheme'] = scheme
         return self.app(environ, start_response)
 
+load_dotenv("/etc/ccs/env")
 app = Flask("ccs")
-app.config["UPLOAD_FOLDER"] = g.FILE_UPLOAD_DIR
 app.wsgi_app = ReverseProxied(app.wsgi_app)
 
 with app.app_context():
-  g._dotenv_path = "/etc/ccs/env"
-  load_dotenv(g._dotenv_path)
+  app.config["UPLOAD_FOLDER"] = os.environ.get("FILE_UPLOAD_DIR")
   g.ACCESS_KEY = os.environ.get("ACCESS_KEY")
   g.ACCESS_SECRET = os.environ.get("ACCESS_SECRET")
-  g.FILE_UPLOAD_DIR = os.environ.get("FILE_UPLOAD_DIR")
   g.DATASET_DIR = os.environ.get("DATASET_DIR") # FLAGS.dataset_dir
   g.CHECKPOINTS_DIR = os.environ.get("CHECKPOINTS_DIR") # FLAGS.checkpoints_dir
   g.ALLOWED_EXTENSIONS = set(["jpg", "jpeg", "png"])
