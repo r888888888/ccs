@@ -1,6 +1,6 @@
 # you should run this with nvidia-docker
 
-FROM tensorflow/tensorflow:latest-gpu-py3
+FROM danbooru/tensorflow:latest
 MAINTAINER Albert Yi "r888888888@gmail.com"
 RUN apt-get update -y
 COPY . /app

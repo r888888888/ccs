@@ -41,3 +41,5 @@ sudo dpkg -i nvidia-docker_1.0.1-1_amd64.deb
 echo "CUDA installation complete. You should now install CUDNN. This is only available"
 echo "by registering on Nvidia's website and cannot be scripted:"
 echo "https://developer.nvidia.com/cudnn"
+
+# TF_SKIP_CONTRIB_TESTS=1 TF_BUILD_RUN_BENCHMARKS=0 TF_BUILD_TEST_TUTORIALS=0 TF_BUILD_BAZEL_CLEAN=0 TF_BUILD_INTEGRATION_TESTS=0 TF_BUILD_OPTIONS=OPT NO_TEST_TFDBG_BINARIES=1 TF_DOCKER_BUILD_IS_DEVEL=NO TF_DOCKER_BUILD_TYPE=GPU TF_DOCKER_BUILD_PYTHON_VERSION=PYTHON3 bash parameterized_docker_build.sh
