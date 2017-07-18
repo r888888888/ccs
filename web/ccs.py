@@ -16,7 +16,7 @@ from slimception.nets import nets_factory
 from slimception.datasets import dataset_factory
 
 slim = tf.contrib.slim
-_dotenv_path = "/run/secrets/ccs_env"
+_dotenv_path = "/etc/ccs/env"
 load_dotenv(_dotenv_path)
 ACCESS_KEY = os.environ.get("ACCESS_KEY")
 ACCESS_SECRET = os.environ.get("ACCESS_SECRET")

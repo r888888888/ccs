@@ -7,4 +7,5 @@ COPY . /app
 WORKDIR /app
 RUN pip3 install -r requirements.txt
 ENTRYPOINT ["python3"]
-CMD ["web/test.py"]
+CMD ["web/ccs.py"]
+VOLUME ["/etc/ccs"]
