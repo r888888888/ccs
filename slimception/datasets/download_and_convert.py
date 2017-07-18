@@ -52,7 +52,7 @@ class DownloaderAndConverter():
     self._min_term_df = kwargs.get('min_term_df', 200)
     self._max_term_df = kwargs.get('max_term_df', 0.4)
     self._ignore_tags = kwargs.get('ignore_tags', set())
-    self._validation_percentage = kwargs.get('validation_percentage', 0.9)
+    self._validation_percentage = kwargs.get('validation_percentage', 0.1)
     self._multilabel = kwargs.get('multilabel', False)
 
     if self._multilabel:
