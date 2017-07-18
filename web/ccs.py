@@ -106,7 +106,7 @@ app.wsgi_app = ReverseProxied(app.wsgi_app)
 
 @app.route("/")
 def index():
-  return redirect(url_for("query", _scheme="https"))
+  return redirect(url_for("query"))
 
 @app.route("/query", methods=["GET", "POST"])
 def query():
