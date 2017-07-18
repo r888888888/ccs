@@ -16,19 +16,6 @@ from slimception.preprocessing import preprocessing_factory
 from slimception.nets import nets_factory
 from slimception.datasets import dataset_factory
 
-g._dotenv_path = "/etc/ccs/env"
-load_dotenv(g._dotenv_path)
-g.ACCESS_KEY = os.environ.get("ACCESS_KEY")
-g.ACCESS_SECRET = os.environ.get("ACCESS_SECRET")
-g.FILE_UPLOAD_DIR = os.environ.get("FILE_UPLOAD_DIR")
-g.DATASET_DIR = os.environ.get("DATASET_DIR") # FLAGS.dataset_dir
-g.CHECKPOINTS_DIR = os.environ.get("CHECKPOINTS_DIR") # FLAGS.checkpoints_dir
-g.ALLOWED_EXTENSIONS = set(["jpg", "jpeg", "png"])
-g._reuse = False
-
-with open(os.path.join(g.DATASET_DIR, "labels.txt"), "r") as f:
-  g._labels = [re.sub(r"^\d+:", "", x) for x in f.read().split()]
-
 def allowed_file(filename):
   return '.' in filename and \
     filename.rsplit('.', 1)[1].lower() in g.ALLOWED_EXTENSIONS
@@ -65,7 +52,7 @@ def query_inception(file):
       np_image, network_input, probabilities = sess.run([image, processed_image, probabilities])
       g._reuse = True
       probabilities = probabilities[0, 0:]
-      return sorted(zip(probabilities, _labels), reverse=True)[0:3]
+      return sorted(zip(probabilities, g._labels), reverse=True)[0:3]
 
 class ReverseProxied(object):
     '''Wrap the application in this middleware and configure the 
@@ -103,6 +90,20 @@ class ReverseProxied(object):
 app = Flask("ccs")
 app.config["UPLOAD_FOLDER"] = g.FILE_UPLOAD_DIR
 app.wsgi_app = ReverseProxied(app.wsgi_app)
+
+with app.app_context():
+  g._dotenv_path = "/etc/ccs/env"
+  load_dotenv(g._dotenv_path)
+  g.ACCESS_KEY = os.environ.get("ACCESS_KEY")
+  g.ACCESS_SECRET = os.environ.get("ACCESS_SECRET")
+  g.FILE_UPLOAD_DIR = os.environ.get("FILE_UPLOAD_DIR")
+  g.DATASET_DIR = os.environ.get("DATASET_DIR") # FLAGS.dataset_dir
+  g.CHECKPOINTS_DIR = os.environ.get("CHECKPOINTS_DIR") # FLAGS.checkpoints_dir
+  g.ALLOWED_EXTENSIONS = set(["jpg", "jpeg", "png"])
+  g._reuse = False
+
+  with open(os.path.join(g.DATASET_DIR, "labels.txt"), "r") as f:
+    g._labels = [re.sub(r"^\d+:", "", x) for x in f.read().split()]
 
 @app.route("/")
 def index():
