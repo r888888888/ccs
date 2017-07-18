@@ -55,7 +55,8 @@ def query_inception(file):
       np_image, network_input, probabilities = sess.run([image, processed_image, probabilities])
       _reuse = True
       probabilities = probabilities[0, 0:]
-      return sorted(zip(probabilities, _labels), reverse=True)[0:3]
+      guesses = sorted(zip(probabilities, _labels), reverse=True)[0:5]
+      return [(float(x[0]), x[1]) for x in guesses]
 
 class ReverseProxied(object):
     '''Wrap the application in this middleware and configure the 
