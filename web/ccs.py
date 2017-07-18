@@ -2,6 +2,7 @@ import sys
 import os
 sys.path.append(os.path.normpath(os.path.join(__file__, "..", "..")))
 
+from flask import g
 from flask import Flask
 from flask import request, render_template, redirect, url_for
 from werkzeug.utils import secure_filename
@@ -15,29 +16,29 @@ from slimception.preprocessing import preprocessing_factory
 from slimception.nets import nets_factory
 from slimception.datasets import dataset_factory
 
-flask.g._dotenv_path = "/etc/ccs/env"
-load_dotenv(flask.g._dotenv_path)
-flask.g.ACCESS_KEY = os.environ.get("ACCESS_KEY")
-flask.g.ACCESS_SECRET = os.environ.get("ACCESS_SECRET")
-flask.g.FILE_UPLOAD_DIR = os.environ.get("FILE_UPLOAD_DIR")
-flask.g.DATASET_DIR = os.environ.get("DATASET_DIR") # FLAGS.dataset_dir
-flask.g.CHECKPOINTS_DIR = os.environ.get("CHECKPOINTS_DIR") # FLAGS.checkpoints_dir
-flask.g.ALLOWED_EXTENSIONS = set(["jpg", "jpeg", "png"])
-flask.g._reuse = False
+g._dotenv_path = "/etc/ccs/env"
+load_dotenv(g._dotenv_path)
+g.ACCESS_KEY = os.environ.get("ACCESS_KEY")
+g.ACCESS_SECRET = os.environ.get("ACCESS_SECRET")
+g.FILE_UPLOAD_DIR = os.environ.get("FILE_UPLOAD_DIR")
+g.DATASET_DIR = os.environ.get("DATASET_DIR") # FLAGS.dataset_dir
+g.CHECKPOINTS_DIR = os.environ.get("CHECKPOINTS_DIR") # FLAGS.checkpoints_dir
+g.ALLOWED_EXTENSIONS = set(["jpg", "jpeg", "png"])
+g._reuse = False
 
-with open(os.path.join(flask.g.DATASET_DIR, "labels.txt"), "r") as f:
-  flask.g._labels = [re.sub(r"^\d+:", "", x) for x in f.read().split()]
+with open(os.path.join(g.DATASET_DIR, "labels.txt"), "r") as f:
+  g._labels = [re.sub(r"^\d+:", "", x) for x in f.read().split()]
 
 def allowed_file(filename):
   return '.' in filename and \
-    filename.rsplit('.', 1)[1].lower() in flask.g.ALLOWED_EXTENSIONS
+    filename.rsplit('.', 1)[1].lower() in g.ALLOWED_EXTENSIONS
 
 def query_inception(file):
   with tf.Graph().as_default():
     dataset = dataset_factory.get_dataset(
       "characters", 
       "validation",
-      flask.g.DATASET_DIR
+      g.DATASET_DIR
     )
     image_processing_fn = preprocessing_factory.get_preprocessing(
       "inception_v4",
@@ -48,21 +49,21 @@ def query_inception(file):
       "inception_v4", 
       num_classes=dataset.num_classes,
       is_training=False,
-      reuse=flask.g._reuse
+      reuse=g._reuse
     )
     eval_image_size = network_fn.default_image_size
     processed_image = image_processing_fn(image, eval_image_size, eval_image_size)
     processed_images = tf.expand_dims(processed_image, 0)
     logits, _ = network_fn(processed_images)
     probabilities = tf.nn.softmax(logits)
-    checkpoint_path = tf.train.latest_checkpoint(flask.g.CHECKPOINTS_DIR)
+    checkpoint_path = tf.train.latest_checkpoint(g.CHECKPOINTS_DIR)
     variables_to_restore = tf.contrib.slim.get_variables_to_restore()
     init_fn = tf.contrib.slim.assign_from_checkpoint_fn(checkpoint_path, variables_to_restore)
 
     with tf.Session() as sess:
       init_fn(sess)
       np_image, network_input, probabilities = sess.run([image, processed_image, probabilities])
-      flask.g._reuse = True
+      g._reuse = True
       probabilities = probabilities[0, 0:]
       return sorted(zip(probabilities, _labels), reverse=True)[0:3]
 
@@ -100,7 +101,7 @@ class ReverseProxied(object):
         return self.app(environ, start_response)
 
 app = Flask("ccs")
-app.config["UPLOAD_FOLDER"] = flask.g.FILE_UPLOAD_DIR
+app.config["UPLOAD_FOLDER"] = g.FILE_UPLOAD_DIR
 app.wsgi_app = ReverseProxied(app.wsgi_app)
 
 @app.route("/")
