@@ -72,7 +72,7 @@ app.config["UPLOAD_FOLDER"] = FILE_UPLOAD_DIR
 
 @app.route("/")
 def index():
-  return redirect(url_for("query"))
+  return redirect(url_for("query", _external=False))
 
 @app.route("/query", methods=["GET", "POST"])
 def query():
