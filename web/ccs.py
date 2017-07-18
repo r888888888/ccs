@@ -2,7 +2,6 @@ import sys
 import os
 sys.path.append(os.path.normpath(os.path.join(__file__, "..", "..")))
 
-from flask import g
 from flask import Flask
 from flask import request, render_template, redirect, url_for
 from werkzeug.utils import secure_filename
@@ -21,7 +20,6 @@ def allowed_file(filename):
     filename.rsplit('.', 1)[1].lower() in set(["jpg", "jpeg", "png"])
 
 def query_inception(file):
-  global _reuse
   global _labels
   with tf.Graph().as_default():
     dataset = dataset_factory.get_dataset(
@@ -38,7 +36,7 @@ def query_inception(file):
       "inception_v4", 
       num_classes=dataset.num_classes,
       is_training=False,
-      reuse=_reuse
+      reuse=None
     )
     eval_image_size = network_fn.default_image_size
     processed_image = image_processing_fn(image, eval_image_size, eval_image_size)
@@ -53,7 +51,6 @@ def query_inception(file):
     with tf.Session() as sess:
       init_fn(sess)
       np_image, network_input, probabilities = sess.run([image, processed_image, probabilities])
-      _reuse = True
       probabilities = probabilities[0, 0:]
       guesses = sorted(zip(probabilities, _labels), reverse=True)[0:5]
       return [(float(x[0]), x[1]) for x in guesses]
@@ -95,7 +92,6 @@ load_dotenv("/etc/ccs/env")
 app = Flask("ccs")
 app.wsgi_app = ReverseProxied(app.wsgi_app)
 app.config["UPLOAD_FOLDER"] = os.environ.get("FILE_UPLOAD_DIR")
-_reuse = False
 
 with open(os.path.join(os.environ.get("DATASET_DIR"), "labels.txt"), "r") as f:
   _labels = [re.sub(r"^\d+:", "", x) for x in f.read().split()]
