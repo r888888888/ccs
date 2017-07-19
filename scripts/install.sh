@@ -38,6 +38,10 @@ sudo ldconfig
 wget https://github.com/NVIDIA/nvidia-docker/releases/download/v1.0.1/nvidia-docker_1.0.1-1_amd64.deb
 sudo dpkg -i nvidia-docker_1.0.1-1_amd64.deb
 
+mkdir -p /var/lib/ccs/data/checkpoint
+mkdir -p /var/lib/ccs/data/models
+mkdir -p /var/lib/ccs/data/dataset
+
 echo "CUDA installation complete. You should now install CUDNN. This is only available"
 echo "by registering on Nvidia's website and cannot be scripted:"
 echo "https://developer.nvidia.com/cudnn"
