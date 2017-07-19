@@ -1,0 +1,25 @@
+{% extends "layout.html" %}
+{% block body %}
+
+<h1>Results</h1>
+
+<table class="table table-sm">
+<thead>
+  <tr>
+    <th>Tag</th>
+    <th>Chance</th>
+  </tr>
+</thead>
+<tbody>
+{% for answer in answers %}
+  <tr>
+    <td>{{ answer[1] }}</td>
+    <td>{{ "{0:.3g}".format(100 * answer[0]) }}</td>
+  </tr>
+{% endfor %}
+</tbody>
+</table>
+
+<p><a href="/query">Go back</a></p>
+
+{% endblock %}

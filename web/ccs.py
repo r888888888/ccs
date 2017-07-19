@@ -115,7 +115,11 @@ def query():
       flash("No file uploaded")
       return redirect(request.url)
     if f and allowed_file(f.filename):
-      return json.dumps(query_inception(f))
+      answers = query_inception(f)
+      if request.args.get("format", "html") == "json":
+        return json.dumps(query_inception(f))
+      else:
+        return render_template("results.html", answers=answers)
     else:
       flash("Content type not supported")
       return redirect(request.url)
