@@ -15,13 +15,8 @@ from slimception.preprocessing import preprocessing_factory
 from slimception.nets import nets_factory
 from slimception.datasets import dataset_factory
 
-def allowed_file(filename):
-  return '.' in filename and \
-    filename.rsplit('.', 1)[1].lower() in set(["jpg", "jpeg", "png"])
-
-def query_inception(file):
-  global _labels
-  with tf.Graph().as_default():
+def initialize_graph(graph):
+  with graph.as_default():
     dataset = dataset_factory.get_dataset(
       "characters", 
       "validation",
@@ -31,7 +26,7 @@ def query_inception(file):
       "inception_v4",
       is_training=False
     )
-    image = tf.image.decode_image(file.read(), channels=3)
+    checkpoint_path = tf.train.latest_checkpoint(os.environ.get("CHECKPOINTS_DIR"))
     network_fn = nets_factory.get_network_fn(
       "inception_v4", 
       num_classes=dataset.num_classes,
@@ -39,21 +34,52 @@ def query_inception(file):
       reuse=None
     )
     eval_image_size = network_fn.default_image_size
+    placeholder = tf.expand_dims(tf.placeholder(tf.float32, shape=(eval_image_size, eval_image_size, 3)), 0)
+    network_fn(placeholder)
+    variables_to_restore = tf.contrib.slim.get_variables_to_restore()
+    init_fn = tf.contrib.slim.assign_from_checkpoint_fn(checkpoint_path, variables_to_restore)
+    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.25)
+    tf_sess_config = tf.ConfigProto(gpu_options=gpu_options)
+    session = tf.Session(graph=graph, config=tf_sess_config)
+    init_fn(session)
+    return (dataset, image_processing_fn, session)
+
+def allowed_file(filename):
+  return '.' in filename and \
+    filename.rsplit('.', 1)[1].lower() in set(["jpg", "jpeg", "png"])
+
+def query_inception(file, graph, labels, dataset, image_processing_fn, session):
+  with graph.as_default():
+    image = tf.image.decode_image(file.read(), channels=3)
+    network_fn = nets_factory.get_network_fn(
+      "inception_v4", 
+      num_classes=dataset.num_classes,
+      is_training=False,
+      reuse=True
+    )
+    eval_image_size = network_fn.default_image_size
     processed_image = image_processing_fn(image, eval_image_size, eval_image_size)
     processed_image = tf.reshape(processed_image, (eval_image_size, eval_image_size, 3))
     processed_images = tf.expand_dims(processed_image, 0)
     logits, _ = network_fn(processed_images)
     probabilities = tf.nn.softmax(logits)
-    checkpoint_path = tf.train.latest_checkpoint(os.environ.get("CHECKPOINTS_DIR"))
-    variables_to_restore = tf.contrib.slim.get_variables_to_restore()
-    init_fn = tf.contrib.slim.assign_from_checkpoint_fn(checkpoint_path, variables_to_restore)
+    probabilities = session.run([probabilities])
+    probabilities = probabilities[0, 0:]
+    guesses = sorted(zip(probabilities, labels), reverse=True)[0:5]
+    return [(float(x[0]), x[1]) for x in guesses]
 
-    with tf.Session() as sess:
-      init_fn(sess)
-      np_image, network_input, probabilities = sess.run([image, processed_image, probabilities])
-      probabilities = probabilities[0, 0:]
-      guesses = sorted(zip(probabilities, _labels), reverse=True)[0:5]
-      return [(float(x[0]), x[1]) for x in guesses]
+def initialize_globals():
+  global _graph
+  global _dataset
+  global _image_processing_fn
+  global _session
+  global _labels
+
+  _graph = tf.Graph()
+  _dataset, _image_processing_fn, _session = initialize_graph(_graph)
+
+  with open(os.path.join(os.environ.get("DATASET_DIR"), "labels.txt"), "r") as f:
+    _labels = [re.sub(r"^\d+:", "", x) for x in f.read().split()]
 
 class ReverseProxied(object):
     '''Wrap the application in this middleware and configure the 
@@ -89,13 +115,12 @@ class ReverseProxied(object):
         return self.app(environ, start_response)
 
 load_dotenv("/etc/ccs/env")
+initialize_globals()
+
 app = Flask("ccs")
 app.wsgi_app = ReverseProxied(app.wsgi_app)
 app.config["UPLOAD_FOLDER"] = os.environ.get("FILE_UPLOAD_DIR")
 app.config['MAX_CONTENT_LENGTH'] = 3 * 1024 * 1024
-
-with open(os.path.join(os.environ.get("DATASET_DIR"), "labels.txt"), "r") as f:
-  _labels = [re.sub(r"^\d+:", "", x) for x in f.read().split()]
 
 @app.route("/")
 def index():
@@ -103,6 +128,12 @@ def index():
 
 @app.route("/query", methods=["GET", "POST"])
 def query():
+  global _graph
+  global _labels
+  global _dataset
+  global _image_processing_fn
+  global _session
+
   if request.method == "POST":
     # access_key = request.form["access_key"]
     # access_secret = request.form["access_secret"]
@@ -116,10 +147,10 @@ def query():
       flash("No file uploaded")
       return redirect(request.url)
     if f and allowed_file(f.filename):
-      answers = query_inception(f)
+      answers = query_inception(f, _graph, _labels, _dataset, _image_processing_fn, _session)
       fmt = request.args.get("format", "html")
       if fmt == "json":
-        return json.dumps(query_inception(f))
+        return json.dumps(answers)
       else:
         return render_template("results.html", answers=answers)
     else:
