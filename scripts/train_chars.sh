@@ -2,8 +2,9 @@
 
 set -e
 
-DATA_HOME_DIR=${DATA_HOME_DIR:-/var/ccs/data}
-INITIAL_STEPS=${INITIAL_STEPS:-15000}
+TF_CPP_MIN_LOG_LEVEL=2
+DATA_HOME_DIR=${DATA_HOME_DIR:-/var/lib/ccs/data}
+INITIAL_STEPS=${INITIAL_STEPS:-50000}
 EVAL_STEPS=${EVAL_STEPS:-5000}
 CSV=${CSV:-posts_chars.csv}
 PRETRAINED_CHECKPOINT_DIR=$DATA_HOME_DIR/checkpoints
@@ -71,7 +72,7 @@ slimception/train_image_classifier.py \
   --learning_rate=0.04 \
   --learning_rate_decay_type=exponential \
   --save_interval_secs=300 \
-  --save_summaries_secs=300 \
+  --save_summaries_secs=1800 \
   --log_every_n_steps=100 \
   --optimizer=adam \
   --weight_decay=0.00004 \
@@ -100,7 +101,7 @@ slimception/train_image_classifier.py \
   --learning_rate=0.0001 \
   --learning_rate_decay_type=fixed \
   --save_interval_secs=300 \
-  --save_summaries_secs=300 \
+  --save_summaries_secs=1800 \
   --log_every_n_steps=100 \
   --optimizer=adam \
   --weight_decay=0.00004 \

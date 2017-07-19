@@ -46,7 +46,7 @@ class DownloaderAndConverter():
     self._num_images_file = kwargs.get('num_images_file', 'num_images.txt')
     self._num_shards = kwargs.get('num_shards', 5)
     self._dataset_name = kwargs.get('dataset_name')
-    self._dataset_dir = kwargs.get('dataset_dir', os.path.expanduser('~/tf-data'))
+    self._dataset_dir = kwargs.get('dataset_dir', '/var/lib/ccs/data/dataset')
     self._source_csv = kwargs.get('source_csv', 'posts.csv')
     self._random_seed = kwargs.get('random_seed', 42)
     self._min_term_df = kwargs.get('min_term_df', 200)
@@ -167,7 +167,7 @@ class DownloaderAndConverter():
       while True:
         try:
           res = urllib.request.urlretrieve(url, local_path)
-          print("downloaded to", res)
+          print("downloaded", md5)
         except http.client.RemoteDisconnected:
           time.sleep(5)
           print("  remote disconnected")
@@ -193,7 +193,7 @@ class DownloaderAndConverter():
     with ThreadPoolExecutor(max_workers=4) as pool:
       pool.map(download_image_wrapper, data.iterrows())
 
-    #self._delete_old_images(hashes)
+    self._delete_old_images(hashes)
     return (list(hashes), tags)
 
   def _label_path(self, hash):

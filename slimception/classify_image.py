@@ -19,7 +19,7 @@ from slimception.datasets import dataset_factory
 slim = tf.contrib.slim
 
 tf.app.flags.DEFINE_string('dataset_name', "tags", 'The name of the dataset.')
-tf.app.flags.DEFINE_string('dataset_dir', os.path.expanduser('~/tf-data/dataset'), 'path to dataset')
+tf.app.flags.DEFINE_string('dataset_dir', '/var/lib/ccs/data/dataset', 'path to dataset')
 tf.app.flags.DEFINE_boolean('multilabel', True, 'Enable mutilabel mode')
 
 FLAGS = tf.app.flags.FLAGS

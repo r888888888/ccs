@@ -2,7 +2,7 @@
 
 set -e
 
-DATA_HOME_DIR=${DATA_HOME_DIR:-~/tf-data-multi}
+DATA_HOME_DIR=${DATA_HOME_DIR:/var/lib/ccs/data}
 INITIAL_STEPS=${INITIAL_STEPS:-15000}
 EVAL_STEPS=${EVAL_STEPS:-5000}
 CSV=${CSV:-posts_tags.csv}
