@@ -92,6 +92,7 @@ load_dotenv("/etc/ccs/env")
 app = Flask("ccs")
 app.wsgi_app = ReverseProxied(app.wsgi_app)
 app.config["UPLOAD_FOLDER"] = os.environ.get("FILE_UPLOAD_DIR")
+app.config['MAX_CONTENT_LENGTH'] = 3 * 1024 * 1024
 
 with open(os.path.join(os.environ.get("DATASET_DIR"), "labels.txt"), "r") as f:
   _labels = [re.sub(r"^\d+:", "", x) for x in f.read().split()]
@@ -116,7 +117,8 @@ def query():
       return redirect(request.url)
     if f and allowed_file(f.filename):
       answers = query_inception(f)
-      if request.args.get("format", "html") == "json":
+      fmt = request.args.get("format", "html")
+      if fmt == "json":
         return json.dumps(query_inception(f))
       else:
         return render_template("results.html", answers=answers)
