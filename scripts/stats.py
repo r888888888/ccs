@@ -14,7 +14,7 @@ pd.set_option('display.max_rows', None)
 _MIN_DF = 150
 _MAX_DF = 0.5
 _IGNORE_TAGS = set(["absurdres", "highres", "character_name", "character_request", "commentary", "commentary_request", "copyright_name", "official_art", "translation_request", "translated", "transparent_background", "twitter_username", "1boy", "2boys", "1girl", "2girls", "3girls", "simple_background", "white_background"])
-data = pd.read_csv(os.path.normpath("~/Development/tf-data/dataset/posts_chars.csv"))
+data = pd.read_csv(os.path.normpath("/var/lib/ccs/data/dataset/posts_chars.csv"))
 cv = CountVectorizer(min_df=_MIN_DF, max_df=_MAX_DF, tokenizer=_tag_tokenizer)
 cv.fit(data["tags"])
 tags = set(cv.vocabulary_.keys()) - _IGNORE_TAGS
