@@ -104,6 +104,10 @@ def download_file(url, ref):
   else:
     abort(400)
 
+def request_wants_json():
+  best = request.accept_mimetypes.best_match(["application/json", "text/html"])
+  return best == "application/json" and request.accept_mimetypes[best] > request.accept_mimetypes["text/html"]
+
 class ReverseProxied(object):
   '''Wrap the application in this middleware and configure the 
   front-end server to add these headers, to let you quietly bind 
@@ -137,19 +141,6 @@ class ReverseProxied(object):
       environ['wsgi.url_scheme'] = scheme
     return self.app(environ, start_response)
 
-load_dotenv("/etc/ccs/env")
-initialize_globals()
-
-app = Flask("ccs")
-app.wsgi_app = ReverseProxied(app.wsgi_app)
-app.config["UPLOAD_FOLDER"] = os.environ.get("FILE_UPLOAD_DIR")
-app.config['MAX_CONTENT_LENGTH'] = 3 * 1024 * 1024
-
-@app.route("/")
-def index():
-  return redirect(url_for("query"))
-
-@app.route("/query.json", methods=["GET"])
 def query_json():
   global _graph
   global _labels
@@ -171,8 +162,23 @@ def query_json():
     answers = query_inception(f, _graph, _labels, _dataset, _image_processing_fn, _session)
     return json.dumps(answers)
 
+load_dotenv("/etc/ccs/env")
+initialize_globals()
+
+app = Flask("ccs")
+app.wsgi_app = ReverseProxied(app.wsgi_app)
+app.config["UPLOAD_FOLDER"] = os.environ.get("FILE_UPLOAD_DIR")
+app.config['MAX_CONTENT_LENGTH'] = 3 * 1024 * 1024
+
+@app.route("/")
+def index():
+  return redirect(url_for("query"))
+
 @app.route("/query", methods=["GET", "POST"])
 def query():
+  if request_wants_json():
+    return query_json()
+
   global _graph
   global _labels
   global _dataset
