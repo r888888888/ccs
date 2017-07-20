@@ -64,7 +64,7 @@ def query_inception(file, graph, labels, dataset, image_processing_fn, session):
     logits, _ = network_fn(processed_images)
     probabilities = tf.nn.softmax(logits)
     probabilities = session.run([probabilities])
-    probabilities = probabilities[0, 0:]
+    probabilities = probabilities[0][0]
     guesses = sorted(zip(probabilities, labels), reverse=True)[0:5]
     return [(float(x[0]), x[1]) for x in guesses]
 
