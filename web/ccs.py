@@ -13,7 +13,7 @@ import re
 import numpy as np
 import tensorflow as tf
 import requests
-import shutil
+import tempfile
 from slimception.datasets import characters
 from slimception.preprocessing import preprocessing_factory
 from slimception.nets import nets_factory
@@ -86,7 +86,7 @@ def initialize_globals():
     _labels = [re.sub(r"^\d+:", "", x) for x in f.read().split()]
 
 def build_sig(msg):
-  return hmac.new(environ.get("CCS_SECRET"), msg, hashlib.sha256).hexdigest()
+  return hmac.new(os.environ.get("CCS_KEY").encode(), msg.encode(), hashlib.sha256).hexdigest()
 
 def validate_params(url, ref, sig):
   msg = "{},{}".format(url, ref)
@@ -100,6 +100,7 @@ def download_file(url, ref):
     file = tempfile.NamedTemporaryFile(suffix=ext, prefix="ccs-")
     for chunk in r.iter_content(1024):
       file.write(chunk)
+    file.seek(0)
     return file
   else:
     abort(400)
@@ -198,7 +199,7 @@ def query():
     flash("No file uploaded")
     return redirect(request.url)
 
-  if not f or not allowed_file(f.filename)
+  if not f or not allowed_file(f.filename):
     flash("Content type not supported")
     return redirect(request.url)
 
