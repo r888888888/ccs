@@ -173,6 +173,11 @@ app.wsgi_app = ReverseProxied(app.wsgi_app)
 app.config["UPLOAD_FOLDER"] = os.environ.get("FILE_UPLOAD_DIR")
 app.config['MAX_CONTENT_LENGTH'] = 3 * 1024 * 1024
 
+@app.after_request
+def set_cors(response):
+  response.headers["Access-Control-Allow-Origin"] = "*"
+  return response
+
 @app.route("/")
 def index():
   return redirect(url_for("query"))
