@@ -14,6 +14,7 @@ import numpy as np
 import tensorflow as tf
 import requests
 import tempfile
+import magic
 from slimception.datasets import characters
 from slimception.preprocessing import preprocessing_factory
 from slimception.nets import nets_factory
@@ -49,8 +50,9 @@ def initialize_graph(graph):
     return (dataset, image_processing_fn, session)
 
 def allowed_file(filename):
-  _, ext = os.path.splitext(filename.lower())
-  return ext in set([".jpg", ".jpeg", ".png", ".gif"])
+  mime = magic.Magic(mime=True)
+  mime_type = mime.from_file(filename)
+  return mime_type in ["image/jpeg", "image/png", "image/gif"]
 
 def query_inception(file, graph, labels, dataset, image_processing_fn, session):
   with graph.as_default():
@@ -156,10 +158,10 @@ def query_json():
   if not validate_params(url, ref, sig):
     abort(401)
 
-  if not allowed_file(url):
-    abort(415)
-
   with download_file(url, ref) as f:
+    if not allowed_file(f.name):
+      abort(415)
+
     answers = query_inception(f, _graph, _labels, _dataset, _image_processing_fn, _session)
     return json.dumps(answers)
 
