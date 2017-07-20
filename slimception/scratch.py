@@ -1,3 +1,19 @@
+import os
+import requests
+import tempfile
+
+url = "https://i.pximg.net/img-original/img/2015/11/11/20/35/29/53500234_p0.jpg"
+ref = "https://www.pixiv.net"
+_, ext = os.path.splitext(url)
+with tempfile.NamedTemporaryFile(suffix=ext, prefix="ccs-") as file:
+  print("name:", file.name)
+  r = requests.get(url, stream=True, headers={"Referer": ref})
+  if r.status_code == requests.codes.ok:
+    for chunk in r.iter_content(1024):
+      file.write(chunk)
+  else:
+    print("error")
+
 import sys
 import os
 sys.path.append("/var/lib/ccs/app")

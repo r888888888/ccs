@@ -2,6 +2,8 @@ import sys
 import os
 sys.path.append(os.path.normpath(os.path.join(__file__, "..", "..")))
 
+import hashlib
+import hmac
 from flask import Flask
 from flask import request, render_template, redirect, url_for
 from werkzeug.utils import secure_filename
@@ -10,6 +12,8 @@ import json
 import re
 import numpy as np
 import tensorflow as tf
+import requests
+import shutil
 from slimception.datasets import characters
 from slimception.preprocessing import preprocessing_factory
 from slimception.nets import nets_factory
@@ -45,8 +49,8 @@ def initialize_graph(graph):
     return (dataset, image_processing_fn, session)
 
 def allowed_file(filename):
-  return '.' in filename and \
-    filename.rsplit('.', 1)[1].lower() in set(["jpg", "jpeg", "png"])
+  _, ext = os.path.splitext(filename.lower())
+  return ext in set([".jpg", ".jpeg", ".png", ".gif"])
 
 def query_inception(file, graph, labels, dataset, image_processing_fn, session):
   with graph.as_default():
@@ -81,38 +85,57 @@ def initialize_globals():
   with open(os.path.join(os.environ.get("DATASET_DIR"), "labels.txt"), "r") as f:
     _labels = [re.sub(r"^\d+:", "", x) for x in f.read().split()]
 
+def build_sig(msg):
+  return hmac.new(environ.get("CCS_SECRET"), msg, hashlib.sha256).hexdigest()
+
+def validate_params(url, ref, sig):
+  msg = "{},{}".format(url, ref)
+  msg_sig = build_sig(msg)
+  return msg_sig == sig
+
+def download_file(url, ref):
+  r = requests.get(url, stream=True, headers={"Referer": ref})
+  if r.status_code == requests.codes.ok:
+    _, ext = os.path.splitext(url)
+    file = tempfile.NamedTemporaryFile(suffix=ext, prefix="ccs-")
+    for chunk in r.iter_content(1024):
+      file.write(chunk)
+    return file
+  else:
+    abort(400)
+
 class ReverseProxied(object):
-    '''Wrap the application in this middleware and configure the 
-    front-end server to add these headers, to let you quietly bind 
-    this to a URL other than / and to an HTTP scheme that is 
-    different than what is used locally.
+  '''Wrap the application in this middleware and configure the 
+  front-end server to add these headers, to let you quietly bind 
+  this to a URL other than / and to an HTTP scheme that is 
+  different than what is used locally.
 
-    In nginx:
-    location /myprefix {
-        proxy_pass http://192.168.0.1:5001;
-        proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Scheme $scheme;
-        proxy_set_header X-Script-Name /myprefix;
-        }
+  In nginx:
+  location /myprefix {
+      proxy_pass http://192.168.0.1:5001;
+      proxy_set_header Host $host;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-Scheme $scheme;
+      proxy_set_header X-Script-Name /myprefix;
+      }
 
-    :param app: the WSGI application
-    '''
-    def __init__(self, app):
-        self.app = app
+  :param app: the WSGI application
+  '''
+  def __init__(self, app):
+    self.app = app
 
-    def __call__(self, environ, start_response):
-        script_name = environ.get('HTTP_X_SCRIPT_NAME', '')
-        if script_name:
-            environ['SCRIPT_NAME'] = script_name
-            path_info = environ['PATH_INFO']
-            if path_info.startswith(script_name):
-                environ['PATH_INFO'] = path_info[len(script_name):]
+  def __call__(self, environ, start_response):
+    script_name = environ.get('HTTP_X_SCRIPT_NAME', '')
+    if script_name:
+      environ['SCRIPT_NAME'] = script_name
+      path_info = environ['PATH_INFO']
+      if path_info.startswith(script_name):
+        environ['PATH_INFO'] = path_info[len(script_name):]
 
-        scheme = environ.get('HTTP_X_SCHEME', '')
-        if scheme:
-            environ['wsgi.url_scheme'] = scheme
-        return self.app(environ, start_response)
+    scheme = environ.get('HTTP_X_SCHEME', '')
+    if scheme:
+      environ['wsgi.url_scheme'] = scheme
+    return self.app(environ, start_response)
 
 load_dotenv("/etc/ccs/env")
 initialize_globals()
@@ -126,6 +149,28 @@ app.config['MAX_CONTENT_LENGTH'] = 3 * 1024 * 1024
 def index():
   return redirect(url_for("query"))
 
+@app.route("/query.json", methods=["GET"])
+def query_json():
+  global _graph
+  global _labels
+  global _dataset
+  global _image_processing_fn
+  global _session
+
+  url = request.args.get("url", "")
+  ref = request.args.get("ref", "")
+  sig = request.args.get("sig", "")
+
+  if not validate_params(url, ref, sig):
+    abort(401)
+
+  if not allowed_file(url):
+    abort(415)
+
+  with download_file(url, ref) as f:
+    answers = query_inception(f, _graph, _labels, _dataset, _image_processing_fn, _session)
+    return json.dumps(answers)
+
 @app.route("/query", methods=["GET", "POST"])
 def query():
   global _graph
@@ -134,30 +179,25 @@ def query():
   global _image_processing_fn
   global _session
 
-  if request.method == "POST":
-    # access_key = request.form["access_key"]
-    # access_secret = request.form["access_secret"]
-    # if access_key != ACCESS_KEY and access_secret != ACCESS_SECRET:
-    #   abort(403)
-    if "file" not in request.files:
-      flash("No file uploaded")
-      return redirect(request.url)
-    f = request.files["file"]
-    if f.filename == '':
-      flash("No file uploaded")
-      return redirect(request.url)
-    if f and allowed_file(f.filename):
-      answers = query_inception(f, _graph, _labels, _dataset, _image_processing_fn, _session)
-      fmt = request.args.get("format", "html")
-      if fmt == "json":
-        return json.dumps(answers)
-      else:
-        return render_template("results.html", answers=answers)
-    else:
-      flash("Content type not supported")
-      return redirect(request.url)
-  else:
+  if request.method == "GET":
     return render_template("upload.html")
+
+  # else method == POST
+  if "file" not in request.files:
+    flash("No file uploaded")
+    return redirect(request.url)
+
+  f = request.files["file"]
+  if f.filename == '':
+    flash("No file uploaded")
+    return redirect(request.url)
+
+  if not f or not allowed_file(f.filename)
+    flash("Content type not supported")
+    return redirect(request.url)
+
+  answers = query_inception(f, _graph, _labels, _dataset, _image_processing_fn, _session)
+  return render_template("results.html", answers=answers)
 
 if __name__ == "__main__":
   app.run(debug=False, host="0.0.0.0")
