@@ -6,7 +6,7 @@ import hashlib
 import hmac
 import logging
 from flask import Flask
-from flask import request, render_template, redirect, url_for, abort
+from flask import request, render_template, redirect, url_for, abort, flash
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 import json
@@ -173,7 +173,7 @@ app = Flask("ccs")
 app.wsgi_app = ReverseProxied(app.wsgi_app)
 app.config["UPLOAD_FOLDER"] = os.environ.get("FILE_UPLOAD_DIR")
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024
-
+app.config["SECRET_KEY"] = os.environ.get("CCS_KEY")
 @app.after_request
 def set_cors(response):
   response.headers["Access-Control-Allow-Origin"] = "*"
@@ -197,24 +197,25 @@ def query():
   if request.method == "GET":
     return render_template("upload.html")
 
-  # else method == POST
-  if "file" not in request.files:
-    flash("No file uploaded")
-    return redirect(request.url)
-
-  f = request.files["file"]
-  if f.filename == '':
-    flash("No file uploaded")
-    return redirect(request.url)
-
-  with tempfile.NamedTemporaryFile() as tempf:
+  if request.form["url"]:
+    tempf = download_file(request.form["url"], None)
+  else:
+    if "file" not in request.files:
+      flash("No file uploaded")
+      return redirect(request.url)
+    f = request.files["file"]
+    if f.filename == '':
+      flash("No file uploaded")
+      return redirect(request.url)
+    tempf = tempfile.NamedTemporaryFile()
     f.save(tempf.name)
     f.close()
     if not allowed_file(tempf.name):
       flash("Content type not supported")
       return redirect(request.url)
-    answers = query_inception(tempf, _graph, _labels, _dataset, _image_processing_fn, _session)
-    return render_template("results.html", answers=answers)
+  answers = query_inception(tempf, _graph, _labels, _dataset, _image_processing_fn, _session)
+  tempf.close()
+  return render_template("results.html", answers=answers)
 
 if __name__ == "__main__":
   app.run(debug=False, host="0.0.0.0")
