@@ -61,6 +61,18 @@ tf.app.flags.DEFINE_boolean(
   "Enable multi-label mode"
 )
 
+tf.app.flags.DEFINE_integer(
+  'min_term_df',
+  150,
+  "Minimum tag frequency to include in training"
+)
+
+tf.app.flags.DEFINE_float(
+  'max_term_df',
+  0.4,
+  "Maximum tag frequency to include in training"
+)
+
 def main(_):
   if not FLAGS.dataset_dir:
     raise ValueError('You must supply the dataset directory with --dataset_dir')
@@ -73,7 +85,9 @@ def main(_):
     dataset_dir=FLAGS.dataset_dir,
     source_csv=FLAGS.source_csv,
     multilabel=FLAGS.multilabel,
-    ignore_tags=ignore_tags
+    ignore_tags=ignore_tags,
+    min_term_df=FLAGS.min_term_df,
+    max_term_df=FLAGS.max_term_df
   )
   processor.run()
 
