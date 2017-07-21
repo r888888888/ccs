@@ -73,7 +73,7 @@ def query_inception(file, graph, labels, dataset, image_processing_fn, session):
     probabilities = session.run([probabilities])
     probabilities = probabilities[0][0]
     guesses = sorted(zip(probabilities, labels), reverse=True)[0:5]
-    return [(float(x[0]), x[1]) for x in guesses]
+    return [(float(x[0]), x[1]) for x in guesses if float(x[0]) >= 0.01]
 
 def initialize_globals():
   global _graph
