@@ -4,6 +4,7 @@ sys.path.append(os.path.normpath(os.path.join(__file__, "..", "..")))
 
 import hashlib
 import hmac
+import logging
 from flask import Flask
 from flask import request, render_template, redirect, url_for, abort
 from werkzeug.utils import secure_filename
@@ -171,7 +172,7 @@ initialize_globals()
 app = Flask("ccs")
 app.wsgi_app = ReverseProxied(app.wsgi_app)
 app.config["UPLOAD_FOLDER"] = os.environ.get("FILE_UPLOAD_DIR")
-app.config['MAX_CONTENT_LENGTH'] = 3 * 1024 * 1024
+app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024
 
 @app.after_request
 def set_cors(response):
@@ -206,12 +207,14 @@ def query():
     flash("No file uploaded")
     return redirect(request.url)
 
-  if not f or not allowed_file(f.filename):
-    flash("Content type not supported")
-    return redirect(request.url)
-
-  answers = query_inception(f, _graph, _labels, _dataset, _image_processing_fn, _session)
-  return render_template("results.html", answers=answers)
+  with tempfile.NamedTemporaryFile() as tempf:
+    f.save(tempf.name)
+    f.close()
+    if not allowed_file(tempf.name):
+      flash("Content type not supported")
+      return redirect(request.url)
+    answers = query_inception(tempf, _graph, _labels, _dataset, _image_processing_fn, _session)
+    return render_template("results.html", answers=answers)
 
 if __name__ == "__main__":
   app.run(debug=False, host="0.0.0.0")
