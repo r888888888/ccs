@@ -8,4 +8,4 @@ COPY . /app
 WORKDIR /app
 RUN pip3 install -r requirements.txt
 ENTRYPOINT ["python3"]
-CMD ["web/ccs.py"]
+CMD ["gunicorn -w 3 -b 127.0.0.1:5000 web.ccs:app"]

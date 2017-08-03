@@ -20,7 +20,6 @@ rm -rf $DATA_HOME_DIR/dataset/*.txt
 rm -rf $DATA_HOME_DIR/dataset/*.tfrecord
 rm -rf $DATA_HOME_DIR/models/*
 
-# Download the dataset
 slimception/download_and_convert_data.py \
   --dataset_dir=${DATASET_DIR} \
   --num_classes_file=num_char_classes.txt \
@@ -29,14 +28,13 @@ slimception/download_and_convert_data.py \
   --source_csv=${CSV} \
   --min_term_df=150
 
-# Fine-tune only the new layers for 1000 steps.
 slimception/train_image_classifier.py \
   --train_dir=${MODEL_DIR} \
   --dataset_name=characters \
   --dataset_split_name=train \
   --dataset_dir=${DATASET_DIR} \
   --model_name=inception_v4 \
-  --checkpoint_path=${PRETRAINED_CHECKPOINT_DIR}/danbooru.ckpt \
+  --checkpoint_path=${PRETRAINED_CHECKPOINT_DIR}/inception_v4.ckpt \
   --checkpoint_exclude_scopes=InceptionV4/Logits,InceptionV4/AuxLogits \
   --max_number_of_steps=${INITIAL_STEPS} \
   --batch_size=32 \
@@ -49,7 +47,6 @@ slimception/train_image_classifier.py \
   --weight_decay=0.00004 \
   --multilabel=False
 
-# Fine-tune all the new layers for 500 steps.
 slimception/train_image_classifier.py \
   --train_dir=${MODEL_DIR}/all \
   --dataset_name=characters \
