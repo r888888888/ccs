@@ -68,6 +68,16 @@ class DownloaderAndConverter():
     )
     return os.path.join(self._dataset_dir, output_filename)
 
+  def _build_tfexample(self, image_data, ext, height, width, class_ids, tfrecord_writer):
+    example = dataset_utils.image_to_tfexample(
+      image_data, 
+      ext.encode(), 
+      height, 
+      width, 
+      class_ids
+    )
+    tfrecord_writer.write(example.SerializeToString())
+
   def _convert_dataset(self, split_name, hashes, class_names_to_ids):
     assert split_name in ['train', 'validation']
 
@@ -101,29 +111,19 @@ class DownloaderAndConverter():
                 image_data = tf.gfile.FastGFile(image_path, 'rb').read()
                 try:
                   height, width = image_reader.read_image_dims(sess, image_data)
-
                   num_classes = len(class_names_to_ids)
+                  class_names = self._read_labels(hashes[i])
+                  ext = image_path.split(".")[-1]
+
                   if self._multilabel:
-                    class_names = self._read_labels(hashes[i])
                     class_ids = np.zeros(num_classes, dtype=np.int64)
                     for x in class_names:
                       class_ids[class_names_to_ids[x]] = 1
+                    self._build_tfexample(image_data, ext, height, width, class_ids, tfrecord_writer)
                   else:
-                    class_name = self._read_labels(hashes[i])
-                    if class_name is None:
-                      continue
-                    class_ids = class_names_to_ids[class_name]
-
-                  ext = image_path.split(".")[-1]
-
-                  example = dataset_utils.image_to_tfexample(
-                    image_data, 
-                    ext.encode(), 
-                    height, 
-                    width, 
-                    class_ids
-                  )
-                  tfrecord_writer.write(example.SerializeToString())
+                    for x in class_names:
+                      class_ids = class_names_to_ids[x]
+                      self._build_tfexample(image_data, ext, height, width, class_ids, tfrecord_writer)
                 except tf.errors.InvalidArgumentError:
                   print("error reading image")
 
@@ -173,9 +173,10 @@ class DownloaderAndConverter():
           print("  remote disconnected")
           continue
         break
-    with open(label_path, "w") as f:
+    with open(label_path, "w+") as f:
       print("writing label", md5)
       f.write("\n".join(ts))
+      f.write("\n")
 
   def _download_images(self):
     hashes = set()
@@ -204,10 +205,7 @@ class DownloaderAndConverter():
       return None
 
     with open(self._label_path(hash), "r") as f:
-      if self._multilabel:
-        return f.read().split()
-      else:
-        return f.read()
+      return f.read().split()
 
   def _image_path(self, hash, ext=None):
     if ext is None:

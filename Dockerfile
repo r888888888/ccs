@@ -7,5 +7,5 @@ RUN apt-get install -y libmagic-dev
 COPY . /app
 WORKDIR /app
 RUN pip3 install -r requirements.txt
-ENTRYPOINT ["python3"]
-CMD ["gunicorn -w 3 -b 127.0.0.1:5000 web.ccs:app"]
+EXPOSE 5000
+ENTRYPOINT ["gunicorn", "--pythonpath=web", "-w 3", "-b", "127.0.0.1:5000", "-t", "180", "web.ccs:app"]
