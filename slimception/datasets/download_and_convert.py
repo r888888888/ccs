@@ -173,7 +173,7 @@ class DownloaderAndConverter():
           print("  remote disconnected")
           continue
         break
-    with open(label_path, "w+") as f:
+    with open(label_path, "a") as f:
       print("writing label", md5)
       f.write("\n".join(ts))
       f.write("\n")

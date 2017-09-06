@@ -13,8 +13,8 @@ DATASET_DIR=$DATA_HOME_DIR/dataset
 
 wget https://isshiki.donmai.us/exports/posts_chars.csv -O /var/lib/ccs/data/dataset/posts_chars.csv
 
-nvidia-docker stop $(nvidia-docker ps -aq)
-nvidia-docker rm $(nvidia-docker ps -aq)
+nvidia-docker stop $(nvidia-docker ps -aq) || true
+nvidia-docker rm $(nvidia-docker ps -aq) || true
 
 rm -rf $DATA_HOME_DIR/dataset/*.txt
 rm -rf $DATA_HOME_DIR/dataset/*.tfrecord
